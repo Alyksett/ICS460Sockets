@@ -6,7 +6,11 @@
     "test": "ssc build -r -o --test=./test/index.js --headless",
     "init-project": "ssc init --config",
     "start": "ssc build -r -o",
-    "build": "ssc build -o"
+    "build": "ssc build -o",
+    "thing1": "ssc run --port 1000",
+    "thing2": "ssc run --port 2000"
+
+
   },
   "keywords": [],
   "author": "",
