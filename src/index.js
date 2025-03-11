@@ -1,5 +1,5 @@
 import { network, Encryption } from 'socket:network'
-
+import { Message } from './message.js'
 //
 // Create (or read from storage) a peer ID and a key-pair for signing.
 //
@@ -26,23 +26,37 @@ const cats = await socket.subcluster({ sharedKey })
 //
 // A published message on this subcluster has arrived!
 //
-cats.on('mew', value => addMessage(value))
-
-//
-// A message will be published into this subcluster
-//
-cats.emit('mew', { food: true })
+cats.on('message', (message) => {
+  console.log("Got message");
+  const buffer = Buffer.from(message);
+  const jsonString = buffer.toString('utf8');
+  console.log("String: ", jsonString);
+  const value = JSON.parse(jsonString);
+  console.log("Parsed value: ", value);
+  
+  const msg = value.message;
+  console.log("Message object: ", msg);
+  const final = JSON.parse(msg);
+  console.log("Author: ", final.author);
+  console.log("Content: ", final.content);
+  const senderId = final.author;
+  const content = final.content;
+  
+  if(senderId === peerId){
+    console.log("Detected message in cluster, but it's from me. Skipping...");
+    return;
+  }
+  addMessageToChat(senderId.substring(0,5) + ": " + content);
+});
 
 //
 // Another peer from this subcluster has directly connected to you.
 //
 cats.on('#join', peer => {
-  console.log("Another cat has joined:")
-  console.log(peer)
-  peer.on('mew', value => {
-    console.log("Another cat said:", value)
-    console.log(value)
-  })
+  console.log("New peer joined!");
+
+  console.log("Peer address: ", peer.address, " Port: ", peer.port);
+  addMessageToChat(peer.address + ":" + peer.port + " joined the chat!"); 
 })
 
 function sendMessage() {
@@ -50,28 +64,43 @@ function sendMessage() {
   const message = input.value.trim();
 
   if (message) {
-    addMessage("You: " + message);  // Display the message from the user
+    addMessageToChat("You: " + message);
     input.value = "";  // Clear the input field
-
-    // Simulate bot response
-    setTimeout(() => {
-      addMessage("Bot: Received: " + message);  // Display the bot's response
-    }, 1000);
+    console.log("Sending message: " + message);
+    const messageObj = new Message(message, peerId, socket.address, socket.port);
+    cats.emit("message", {"message": JSON.stringify(messageObj)});  // Send the message to the other peers
+    console.log("Sent message");
   }
 }
 window.sendMessage = sendMessage;
 
-function addMessage(message) {
+function addMessageToChat(message) {
+  console.log("Adding message to chat: " + message);
   const chatBox = document.getElementById("chatBox");
   const newMessage = document.createElement("div");
   newMessage.textContent = message;
   chatBox.appendChild(newMessage);
   chatBox.scrollTop = chatBox.scrollHeight;  // Scroll to bottom
+
 }
 /*
 
 peer:
-
+Peer own properties:
+[
+  '_events',
+  '_eventsCount',
+  '_contexts',
+  '_maxListeners',
+  '_on',
+  '_emit',
+  'peerId',
+  'port',
+  'address',
+  'emit',
+  '_peer'
+]
+  'on',
 EventEmitter {
   _events: {},
   _eventsCount: 0,
