@@ -5,7 +5,8 @@
     "description": "1. Install node 2. run `npm i @socketsupply/socket -g` 3. run `ssc build && ssc run` in this repo",
     "main": "index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "ssc build && ssc run"
     },
     "repository": {
         "type": "git",

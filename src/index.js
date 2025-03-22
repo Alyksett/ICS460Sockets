@@ -1,5 +1,6 @@
 import { network, Encryption } from 'socket:network'
 import { Message } from './message.js'
+
 //
 // Create (or read from storage) a peer ID and a key-pair for signing.
 //
@@ -22,6 +23,8 @@ const socket = await network({ peerId, clusterId, signingKeys })
 // Create a subcluster (a partition within your cluster)
 //
 const cats = await socket.subcluster({ sharedKey })
+
+const peers = [];
 
 //
 // A published message on this subcluster has arrived!
@@ -46,7 +49,7 @@ cats.on('message', (message) => {
     console.log("Detected message in cluster, but it's from me. Skipping...");
     return;
   }
-  addMessageToChat(senderId.substring(0,5) + ": " + content);
+  addMessageToChat(senderId + content);
 });
 
 //
@@ -56,6 +59,7 @@ cats.on('#join', peer => {
   console.log("New peer joined!");
 
   console.log("Peer address: ", peer.address, " Port: ", peer.port);
+  peers.push(peer)
   addMessageToChat(peer.address + ":" + peer.port + " joined the chat!"); 
 })
 
@@ -63,11 +67,23 @@ function sendMessage() {
   const input = document.getElementById("messageInput");
   const message = input.value.trim();
 
-  let recipient = "broadcast"
+  let recipientKey = "broadcast"
   const isDirectMessage = document.getElementById('messageType').value === "Direct Message";
 
   if(isDirectMessage){
-    recipient = document.getElementById('directMessageSelect').value;
+    console.log("Currently online users:")
+    console.log(peers)
+    recipientKey = document.getElementById('directMessageSelect').value;
+    let recipient = null
+    for(const p of peers){
+      if(p.address === recipientKey){
+        recipient = p
+      }
+    }
+    console.log("Found recipient in logged in users. Sending direct message")
+    addMessageToChat("You: " + message);
+    recipient.send(message, recipient.port, recipient.address);
+    return;
   }
   
   
@@ -108,8 +124,7 @@ function toggleDirectMessageSelect(){
   }
 }
 function getDirectMessageOptions(){
-  // Return a hard-coded list of values
-  return ['User1', 'User2', 'User3'];
+  return peers.map(p => p.peerId);
 }
 function populateDirectMessageSelect(){
   const directMessageSelect = document.getElementById('directMessageSelect');
