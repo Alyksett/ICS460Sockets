@@ -1,7 +1,6 @@
 import { network, Encryption } from 'socket:network'
-import { Message, Peer } from './types.js'
-
-
+import { Message } from './message.js'
+//
 // Create (or read from storage) a peer ID and a key-pair for signing.
 //
 const peerId = await Encryption.createId()
@@ -24,8 +23,6 @@ const socket = await network({ peerId, clusterId, signingKeys })
 //
 const cats = await socket.subcluster({ sharedKey })
 
-
-const connectedPeers = [];
 //
 // A published message on this subcluster has arrived!
 //
@@ -59,26 +56,31 @@ cats.on('#join', peer => {
   console.log("New peer joined!");
 
   console.log("Peer address: ", peer.address, " Port: ", peer.port);
-  const peerNew = new Peer("name", peer.address, peer.port, peer)
   addMessageToChat(peer.address + ":" + peer.port + " joined the chat!"); 
-  addPeerToChat(peerNew)
 })
 
 function sendMessage() {
   const input = document.getElementById("messageInput");
   const message = input.value.trim();
 
+  let recipient = "broadcast"
+  const isDirectMessage = document.getElementById('messageType').value === "Direct Message";
+
+  if(isDirectMessage){
+    recipient = document.getElementById('directMessageSelect').value;
+  }
+  
+  
   if (message) {
     addMessageToChat("You: " + message);
     input.value = "";  // Clear the input field
     console.log("Sending message: " + message);
-    const messageObj = new Message(message, "public", peerId, socket.address, socket.port);
+    const messageObj = new Message(message, peerId, socket.address, socket.port);
     cats.emit("message", {"message": JSON.stringify(messageObj)});  // Send the message to the other peers
     console.log("Sent message");
   }
 }
 window.sendMessage = sendMessage;
-
 
 function addMessageToChat(message) {
   console.log("Adding message to chat: " + message);
@@ -87,28 +89,29 @@ function addMessageToChat(message) {
   newMessage.textContent = message;
   chatBox.appendChild(newMessage);
   chatBox.scrollTop = chatBox.scrollHeight;  // Scroll to bottom
+
 }
 
-function addPeerToChat(peer){
-  console.log("Adding peer to chat")
-  console.log(peer.toString())
-  connectedPeers.push(peer);
-}
-
-
-function toggleDirectMessageSelect() {  
+function toggleDirectMessageSelect(){
   const messageType = document.getElementById('messageType').value;
   const directMessageSelect = document.getElementById('directMessageSelect');
+  const directMessageSelectWrapper = document.getElementById('directMessageSelectWrapper');
+
   
   if (messageType === 'Direct Message') {
     directMessageSelect.style.display = 'inline-block';
+    directMessageSelectWrapper.style.display = 'inline-block'
     populateDirectMessageSelect();
   } else {
     directMessageSelect.style.display = 'none';
+    directMessageSelectWrapper.style.display = 'none';
   }
 }
-
-function populateDirectMessageSelect() {
+function getDirectMessageOptions(){
+  // Return a hard-coded list of values
+  return ['User1', 'User2', 'User3'];
+}
+function populateDirectMessageSelect(){
   const directMessageSelect = document.getElementById('directMessageSelect');
   const options = getDirectMessageOptions();
   
@@ -124,12 +127,7 @@ function populateDirectMessageSelect() {
   });
 }
 
-function getDirectMessageOptions() {
-  // Return a hard-coded list of values
-  return ['User1', 'User2', 'User3'];
-}
-
-window.toggleDirectMessageSelect = toggleDirectMessageSelect;
+window.toggleDirectMessageSelect = toggleDirectMessageSelect
 /*
 
 peer:

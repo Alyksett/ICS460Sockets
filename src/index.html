@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta
-  http-equiv="Content-Security-Policy"
-  content="
-    connect-src https: http: blob: ipc: npm: node: wss: ws: ws://localhost:*;
-    script-src https: http: blob: npm: node: http://localhost:* 'unsafe-eval' 'unsafe-inline';
-    worker-src https: http: blob: 'unsafe-eval' 'unsafe-inline';
-    frame-src https: http: blob: http://localhost:*;
-    img-src https: http: blob: http://localhost:*;
-    child-src https: http: blob:;
-    object-src 'none';
-  "
->
+      http-equiv="Content-Security-Policy"
+      content="
+        connect-src socket: https: http: blob: ipc: npm: node: wss: ws: ws://localhost:*;
+         script-src socket: https: http: blob: npm: node: http://localhost:* 'unsafe-eval' 'unsafe-inline';
+         worker-src socket: https: http: blob: 'unsafe-eval' 'unsafe-inline';
+          frame-src socket: https: http: blob: http://localhost:*;
+            img-src socket: https: http: blob: http://localhost:*;
+          child-src socket: https: http: blob:;
+         object-src 'none';
+      "
+    >
     <style type="text/css">
       html, body {
         height: 100%;
@@ -29,8 +29,8 @@
         background-color: #f0f0f0;
       }
       #chatBox {
-        width: 300px;
-        height: 400px;
+        width: 400px;
+        height: 200px;
         border: 1px solid #ccc;
         padding: 10px;
         background-color: white;
@@ -50,31 +50,42 @@
         color: white;
         border-radius: 4px;
       }
+      main{
+        background-color: black;
+        border: solid;
+        border-color: green;
+      }
     </style>
-  </head>
-  
-  <body>
-    <!-- Chat Box -->
-    <div id="chatBox"></div>
-    
-    <!-- Message Input -->
-    <div>
-      <input type="text" id="messageInput" placeholder="Type a message..." />
-      <button onclick="sendMessage()">Send</button>
-    </div>
-    <!--Target Selection-->
-    <div style="padding-top: 10px; align-items: center;">
-      <span style="display: inline-block; margin-left: 10px;">
-        Send as a:</span>
-      
-      <select id="messageType" onchange="toggleDirectMessageSelect()">
-        <option>Broadcast</option>
-        <option>Direct Message</option>
-      </select>
-      <select id="directMessageSelect" style="display: none;">
-        <!-- Options will be populated by JavaScript -->
-      </select>
-    </div>
     <script src="index.js" type="module"></script>
+  </head>
+  <body>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+    
+      <!-- Chat Box -->
+      <div id="chatBox"></div>
+      
+      <!-- Message Input -->
+       <div>
+         <input type="text" id="messageInput" placeholder="Type a message..." />
+         <button onclick="sendMessage()">Send</button>
+       </div>
+      <!-- Message Type -->
+       <div style="margin-top: 10px;">
+         Would you like to send this message as:
+         <select id="messageType" onchange="toggleDirectMessageSelect()">
+          <option>Broadcast</option>
+          <option>Direct Message</option>
+        </select>
+        <br>
+        <div id="directMessageSelectWrapper" style="display: none;">
+          Send message to:
+        </div>
+        <select id="directMessageSelect" style="display: none;">
+          
+          <!-- Options will be populated by JavaScript -->
+        </select>
+      </div>
+    </div>
+
   </body>
 </html>
