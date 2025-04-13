@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "es2022",
+    "moduleDetection": "force",
+    "allowJs": true,
+
+    /* Bundler mode */
+    "baseUrl": ".", // or whatever your project root is
+    "paths": {
+      "socket:*": ["node_modules/@socketsupply/socket/index.d.ts"]
+    },
+    "moduleResolution": "node",
+    "allowImportingTsExtensions": false,
+    "verbatimModuleSyntax": true,
+    "noEmit": false,
+
+    /* Linting */
+    "skipLibCheck": true,
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+  },
+  "exclude": ["node_modules/", "./dist/*/**"],
+
+  "include": ["src/**/*"],
+
+
+}

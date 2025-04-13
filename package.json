@@ -6,7 +6,8 @@
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "ssc build && ssc run"
+        "start": "tsc -p ./ && ssc build && ssc run",
+        "idk": "cp -r src/ dist/ && tsc --outDir dist"
     },
     "repository": {
         "type": "git",
@@ -20,6 +21,7 @@
     },
     "homepage": "https://github.com/Alyksett/ICS460Sockets#readme",
     "dependencies": {
-        "@socketsupply/socket": "^0.6.0-rc.8"
+        "@socketsupply/socket": "^0.6.0-rc.8",
+        "typescript": "^5.8.3"
     }
 }
