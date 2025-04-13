@@ -25,15 +25,18 @@ export class Client {
         return this.peers;
     }
     sendMessage(message) {
-        console.log("In sendMessage. Sending to cluster...");
         const buf = Buffer.from(JSON.stringify({ message: message, peer: this.peerId }));
         this.subcluster.emit("message", buf);
     }
     handleMessage(message) {
-        console.log("In handleMessage");
-        console.log(message);
-        console.log("--------------------------");
-        addMessageToChat("Received message: " + message);
+        const parsedMessage = JSON.parse(message.toString());
+        const messageContent = parsedMessage.message;
+        const messagePeer = parsedMessage.peer;
+        if (messagePeer === this.peerId) {
+            console.log("Message is from self. Ignoring.");
+            return;
+        }
+        addMessageToChat("Received message: " + messageContent);
     }
 }
 export async function startClient() {
@@ -46,7 +49,6 @@ export async function startClient() {
     const subcluster = await socket.subcluster({ sharedKey });
     subcluster.join();
     let peers = Array.from(subcluster.peers.values()).map((peer) => peer.peerId);
-    console.log('Current peers' + peers);
     const client = new Client(peerId, socket, clusterId, signingKeys, sharedKey, peers, subcluster);
     subcluster.on("message", (message) => {
         client.handleMessage(message);

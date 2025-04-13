@@ -1,21 +1,17 @@
 // Must import from *.js... for some reason...
-import { Message } from './types.js';
 import { Client, startClient } from './handler.js';
-import { EventEmitter } from 'socket:events';
 (async () => {
     const client = await startClient();
-    window.sendMessage = () => sendMessage(client.peerId, client.socket, client.subcluster, client);
+    window.sendMessage = () => sendMessage(client);
     window.toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
     console.log("Client initialized");
 })();
-function sendMessage(peerId, socket, subcluster, client) {
-    console.log("Triggered sendMessage");
+function sendMessage(client) {
     const peers = client.getPeers();
     const inputElement = document.getElementById("messageInput");
     let inputValue = "";
     if (inputElement) {
         inputValue = inputElement.value.trim();
-        console.log("Input value:", inputValue);
     }
     else {
         console.error("Input element not found");
@@ -27,6 +23,7 @@ function sendMessage(peerId, socket, subcluster, client) {
         console.error("Element not found");
         return;
     }
+    // not working right now- need to track peer id's better first.s
     // const isDirectMessage = element.value === "Direct Message";
     // if(isDirectMessage){
     //   console.log("Currently online users:")

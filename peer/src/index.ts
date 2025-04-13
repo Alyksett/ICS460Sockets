@@ -1,27 +1,22 @@
 // Must import from *.js... for some reason...
-import { Message } from './types.js';
 import { Client, startClient } from './handler.js'
-import { EventEmitter } from 'socket:events';
 
 (async () => {
   const client = await startClient();
-  (window as any).sendMessage = () => sendMessage(client.peerId, client.socket, client.subcluster, client);
+  (window as any).sendMessage = () => sendMessage(client);
   (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
   console.log("Client initialized");
 })();
 
-function sendMessage(peerId: any, socket: any, subcluster: any, client: Client) {
-  console.log("Triggered sendMessage");
+function sendMessage(client: Client) {
   const peers: any[] = client.getPeers();
   const inputElement = document.getElementById("messageInput") as HTMLInputElement;
   let inputValue = "";
   if (inputElement) {
     inputValue = inputElement.value.trim();
-    console.log("Input value:", inputValue);
   } else {
     console.error("Input element not found");
   }
-  
 
   console.log("Message: " + inputValue);
   let recipientKey = "broadcast"
@@ -30,6 +25,9 @@ function sendMessage(peerId: any, socket: any, subcluster: any, client: Client) 
     console.error("Element not found");
     return;
   }
+  
+  // not working right now- need to track peer id's better first.s
+
   // const isDirectMessage = element.value === "Direct Message";
 
   // if(isDirectMessage){
@@ -62,7 +60,7 @@ function sendMessage(peerId: any, socket: any, subcluster: any, client: Client) 
   }
 }
 
-export function addMessageToChat(message: any) {
+export function addMessageToChat(message: string) {
   console.log("Adding message to chat: " + message);
   const chatBox = document.getElementById("chatBox");
   const newMessage = document.createElement("div");
