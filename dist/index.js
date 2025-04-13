@@ -1,18 +1,18 @@
 // Must import from *.js... for some reason...
 import { Message } from './types.js';
 import { Client, startClient } from './handler.js';
-console.log("Starting client");
+import { EventEmitter } from 'socket:events';
 (async () => {
     const client = await startClient();
-    window.sendMessage = () => sendMessage(client.peerId, client.socket, client.cats, client);
+    window.sendMessage = () => sendMessage(client.peerId, client.socket, client.subcluster, client);
     window.toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
     console.log("Client initialized");
 })();
-function sendMessage(peerId, socket, cats, client) {
+function sendMessage(peerId, socket, subcluster, client) {
     console.log("Triggered sendMessage");
     const peers = client.getPeers();
     const inputElement = document.getElementById("messageInput");
-    let inputValue = "oops";
+    let inputValue = "";
     if (inputElement) {
         inputValue = inputElement.value.trim();
         console.log("Input value:", inputValue);
@@ -27,33 +27,31 @@ function sendMessage(peerId, socket, cats, client) {
         console.error("Element not found");
         return;
     }
-    const isDirectMessage = element.value === "Direct Message";
-    if (isDirectMessage) {
-        console.log("Currently online users:");
-        console.log(peers);
-        const element = document.getElementById('directMessageSelect');
-        if (!element) {
-            console.error("Element not found");
-            return;
-        }
-        recipientKey = element.innerText;
-        let recipient = null;
-        for (const p of peers) {
-            if (p.address === recipientKey) {
-                recipient = p;
-            }
-        }
-        console.log("Found recipient in logged in users. Sending direct message");
-        addMessageToChat("You: " + inputValue);
-        recipient.send(inputValue, recipient.port, recipient.address);
-        return;
-    }
+    // const isDirectMessage = element.value === "Direct Message";
+    // if(isDirectMessage){
+    //   console.log("Currently online users:")
+    //   console.log(peers)
+    //   const element = document.getElementById('directMessageSelect');
+    //   if(!element){
+    //     console.error("Element not found");
+    //     return;
+    //   }	
+    //   recipientKey = element.innerText;
+    //   let recipient = null
+    //   for(const p of peers){
+    //     if(p.address === recipientKey){
+    //       recipient = p
+    //     }
+    //     }
+    //   console.log("Found recipient in logged in users. Sending direct message")
+    //   addMessageToChat("You: " + inputValue);
+    //   recipient.send(inputValue, recipient.port, recipient.address);
+    //   return;
+    // }
     if (inputValue) {
         addMessageToChat("You: " + inputValue);
+        client.sendMessage(inputValue);
         inputElement.innerText = ""; // Clear the input field
-        console.log("Sending message: " + inputValue);
-        const messageObj = new Message(inputValue, peerId, socket.address, socket.port);
-        cats.emit("message", { "message": JSON.stringify(messageObj) }); // Send the message to the other peers
         console.log("Sent message");
     }
 }
