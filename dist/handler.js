@@ -1,8 +1,11 @@
 import { network, Encryption } from 'socket:network';
 import { Peer } from 'socket:latica/index';
 import Buffer from 'socket:buffer';
-import { Message } from './types';
-import { addMessageToChat } from './index';
+// import { Message } from './types';
+// import { addMessageToChat } from './index';
+function addMessageToChat(message) {
+    console.log("Message to chat: ", message);
+}
 export class Client {
     peerId;
     socket;

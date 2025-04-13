@@ -1,5 +1,6 @@
-import { Message } from './types';
-import { Client, startClient } from './handler';
+// Must import from *.js... for some reason...
+import { Message } from './types.js';
+import { Client, startClient } from './handler.js';
 console.log("Starting client");
 (async () => {
     const client = await startClient();
