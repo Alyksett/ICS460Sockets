@@ -1,5 +1,5 @@
-export class Message{
-    constructor(content, author, ip, port){
+export class Message {
+    constructor(content, author, ip, port) {
         this.content = content;
         this.author = author;
         this.ip = ip;

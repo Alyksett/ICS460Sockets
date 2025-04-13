@@ -1,0 +1,154 @@
+
+Socket object: EventEmitter {
+  _events:
+    [Object: null prototype] {
+      #join: [AsyncFunction],
+      #stream: [AsyncFunction: handlePacket],
+      #packet: [AsyncFunction: handlePacket],
+      #disconnection: [Function]
+    },
+  _eventsCount: 4,
+  _contexts:
+      async (packet, peer) => {\n    const scid = packet.subclusterId.toString(\'base64\')\n    const sub = bus.subclusters.get(scid)\n    if (!sub) return\n    if (!peer || !peer.peerId) return\n\n    let ee = sub.peers.get(peer.peerId)\n\n    if (!ee) {\
+    Map(3) {
+n      ee = new events.EventEmitter()\n\n      ee._on = ee.on\n      ee._emit = ee.emit\n\n      ee.peerId = peer.peerId\n      ee.address = peer.address\n      ee.port = peer.port\n\n      ee.emit = async (eventName, value, opts = {}) => {\n        opts.c
+lusterId = opts.clusterId || clusterId\n        opts.subclusterId = opts.subclusterId || sub.subclusterId\n\n        const args = await pack(eventName, value, opts)\n        return _peer.stream(peer.peerId, sub.sharedKey, args)\n      }\n\n      ee.on = as
+ync (eventName, cb) => {\n        if (eventName[0] !== \'#\') eventName = await sha256(eventName)\n        ee._on(eventName, cb)\n      }\n    }\n\n    const oldPeer = sub.peers.has(peer.peerId)\n    const portChange = oldPeer.port !== peer.port\n    const
+ addressChange = oldPeer.address !== peer.address\n    const natChange = oldPeer.natType !== peer.natType\n    const change = portChange || addressChange || natChange\n\n    ee._peer = peer\n\n    sub.peers.set(peer.peerId, ee)\n    const isStateChange = !
+      async (packet, peer, port, address) => {\n    const scid = packet.subclusterId.toString(\'base64\')\n    const sub = bus.subclusters.get(scid)\n    if (!sub) return\n\n    const eventName = packet.usr1.toString(\'hex\')\n    const { verified, opened
+oldPeer || change\n\n    _peer.onDebug(_peer.peerId, `<-- API CONNECTION JOIN (scid=${scid}, peerId=${peer.peerId.slice(0, 6)})`)\n\n    sub._emit(\'#join\', ee, packet, isStateChange)\n  } => Snapshot {},
+} = await unpack(packet)\n    if (verified) packet.verified = true\n\n    sub._emit(eventName, opened, packet)\n\n    const ee = sub.peers.get(packet.streamFrom || peer?.peerId)\n    if (ee) ee._emit(eventName, opened, packet)\n  } => Snapshot {},
+      peer => {\n    for (const sub of [...bus.subclusters.values()]) {\n      sub._emit(\'#leave\', peer)\n      sub.peers.delete(peer.peerId)\n    }\n  } => Snapshot {}
+    },
+  _maxListeners: undefined,
+  _on: [Function: on],
+  _once: [Function: once],
+  _emit: [Function: emit],
+  clusterId: <Buffer 64 57 90 0d 7d 40 22 dc bf a5 63 4f 64 5f a7 2e 74 77 61 1e d1 0e 26 64 2c 58 43 20 f7 ff 5c 8b>,
+  subclusters: Map(0) {},
+  getInfo: [Function],
+  getMetrics: [Function],
+  getState: [Function],
+  addIndexedPeer: [Function],
+  close: [Function],
+  sync: [Function],
+  reconnect: [Function],
+  disconnect: [Function],
+  sealUnsigned: [Function],
+  openUnsigned: [Function],
+  seal: [Function],
+  open: [Function],
+  send: [Function],
+  query: [Function],
+  MAX_CACHE_TTL: 21600000,
+  emit: [AsyncFunction],
+  on: [AsyncFunction],
+  subcluster: [AsyncFunction]
+}
+Socket properties: [
+  '_events',
+  '_eventsCount',
+  '_contexts',
+  '_maxListeners',
+  '_on',
+  '_once',
+  '_emit',
+  'clusterId',
+  'subclusters',
+  'getInfo',
+  'getMetrics',
+  'getState',
+  'close',
+  'addIndexedPeer',
+  'sync',
+  'reconnect',
+  'disconnect',
+  'sealUnsigned',
+  'openUnsigned',
+  'seal',
+  'send',
+  'open',
+  'query',
+  'MAX_CACHE_TTL',
+  'emit',
+  'on',
+  'subcluster'
+]
+Socket prototype methods: [
+  'constructor',
+  '_events',
+  '_contexts',
+  '_eventsCount',
+  '_maxListeners',
+  'setMaxListeners',
+  'getMaxListeners',
+  'emit',
+  'addListener',
+  'on',
+  'prependListener',
+  'once',
+  'prependOnceListener',
+  'removeListener',
+  'off',
+  'removeAllListeners',
+  'listeners',
+  'rawListeners',
+  'listenerCount',
+  'eventNames'
+]
+------------------------------
+Key: async (packet, peer) => {
+    const scid = packet.subclusterId.toString('base64')
+    const sub = bus.subclusters.get(scid)
+    if (!sub) return
+    if (!peer || !peer.peerId) return
+    let ee = sub.peers.get(peer.peerId)
+    if (!ee) {
+      ee = new events.EventEmitter()
+      ee._on = ee.on
+      ee._emit = ee.emit
+      ee.peerId = peer.peerId
+      ee.address = peer.address
+      ee.port = peer.port
+      ee.emit = async (eventName, value, opts = {}) => {
+        opts.clusterId = opts.clusterId || clusterId
+        opts.subclusterId = opts.subclusterId || sub.subclusterId
+        const args = await pack(eventName, value, opts)
+        return _peer.stream(peer.peerId, sub.sharedKey, args)
+      }
+      ee.on = async (eventName, cb) => {
+        if (eventName[0] !== '#') eventName = await sha256(eventName)
+        ee._on(eventName, cb)
+    }
+      }
+    const oldPeer = sub.peers.has(peer.peerId)
+    const portChange = oldPeer.port !== peer.port
+    const natChange = oldPeer.natType !== peer.natType
+    const addressChange = oldPeer.address !== peer.address
+    const change = portChange || addressChange || natChange
+    ee._peer = peer
+    sub.peers.set(peer.peerId, ee)
+    _peer.onDebug(_peer.peerId, `<-- API CONNECTION JOIN (scid=${scid}, peerId=${peer.peerId.slice(0, 6)})`)
+    const isStateChange = !oldPeer || change
+    sub._emit('#join', ee, packet, isStateChange)
+  }, Value: Snapshot {}
+Snapshot details: []
+Key: async (packet, peer, port, address) => {
+    const scid = packet.subclusterId.toString('base64')
+    const sub = bus.subclusters.get(scid)
+    if (!sub) return
+    const eventName = packet.usr1.toString('hex')
+    const { verified, opened } = await unpack(packet)
+    if (verified) packet.verified = true
+    sub._emit(eventName, opened, packet)
+    const ee = sub.peers.get(packet.streamFrom || peer?.peerId)
+    if (ee) ee._emit(eventName, opened, packet)
+  }, Value: Snapshot {}
+Snapshot details: []
+Key: peer => {
+    for (const sub of [...bus.subclusters.values()]) {
+      sub._emit('#leave', peer)
+      sub.peers.delete(peer.peerId)
+    }
+  }, Value: Snapshot {}
+Client initialized
