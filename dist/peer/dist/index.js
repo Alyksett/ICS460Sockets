@@ -6,16 +6,8 @@ import { Client, startClient } from './handler.js';
     window.toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
     console.log("Client initialized");
 })();
-document.getElementById('loginForm')?.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const displayName = document.getElementById('displayName').value;
-    const clusterId = document.getElementById('clusterId').value;
-    console.log('Logged in as:', displayName, 'Cluster ID:', clusterId);
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('chatBox').style.display = 'block';
-});
 function sendMessage(client) {
-    const peerNames = client.getPeers();
+    const peers = client.getPeers();
     const inputElement = document.getElementById("messageInput");
     let inputValue = "";
     if (inputElement) {
