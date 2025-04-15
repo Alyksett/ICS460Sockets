@@ -44,8 +44,9 @@
     </div>
     </div>    
     <!-- CHAT -->
-    <div id="chatBox" style="display: none;">
-      
+    
+    <label id="nameLabel"></label>
+    <div id="chatBox" style="display:none;">
       <div id= "chatPage" style="display: flex; flex-direction: column; align-items: center;">
         <!-- Chat Box -->
         <div id="messageBox" style="border-color: black;"></div>
@@ -53,7 +54,7 @@
         <!-- Message Input -->
         <div>
             <input type="text" id="messageInput" placeholder="Type a message..." />
-            <button onclick="sendMessage()">Send</button>
+            <button onclick="sendMessage()">Send as</button>
         </div>
         <!-- Message Type -->
         <div style="margin-top: 10px;">

@@ -20,7 +20,8 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   (window as any).sendMessage = () => sendMessage(client);
   (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
   console.log("Client initialized");
-
+  
+  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}`;
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
 });
