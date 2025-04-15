@@ -1,11 +1,13 @@
 // Must import from *.js... for some reason...
-import { Client, startClient } from './handler.js'
-
+import { Client, startClient, User } from './handler.js'
 
 document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
   event.preventDefault();
   const displayName = (document.getElementById('displayName') as HTMLInputElement).value;
   const clusterId = (document.getElementById('clusterId') as HTMLInputElement).value;
+  const messageType = (document.getElementById('sendMessageType') as HTMLInputElement);
+  console.log(messageType);
+
   let client: Client;
 
   try {
@@ -27,10 +29,23 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
 });
 
 
-
+// document.addEventListener('change', (event) => {
+//   const target = event.target as HTMLSelectElement;
+//   if (target && target.id === 'sendMessageType') {
+//     currentMessageType = target.value;
+//     console.log("Message type changed to: " + currentMessageType);
+//   }
+// });
+// document.addEventListener('change', (event) => {
+//   const target = event.target as HTMLSelectElement;
+//   if (target && target.id === 'directMessageSelect') {
+//     currentSelectedUser = target.innerText;
+//     console.log("Current selected user changed to: " + currentSelectedUser);
+//   }
+// });
 
 function sendMessage(client: Client) {
-  const peerNames: any[] = client.getPeers();
+  const users: User[] = client.getPeers();
   const inputElement = document.getElementById("messageInput") as HTMLInputElement;
   let inputValue = "";
   if (inputElement) {
@@ -38,40 +53,42 @@ function sendMessage(client: Client) {
   } else {
     console.error("Input element not found");
   }
-
-  console.log("Message: " + inputValue);
-  let recipientKey = "broadcast"
-  const element = document.getElementById('messageType') as HTMLSelectElement;
-  if (!element) {
-    console.error("Element not found");
+  const messageTypeElement = document.getElementById('sendMessageType') as HTMLSelectElement;
+  if(!messageTypeElement){
+    console.error("Message type element not found");
     return;
   }
+  const currentMessageType = messageTypeElement.value
   
-  // not working right now- need to track peer id's better first.s
-
-  // const isDirectMessage = element.value === "Direct Message";
-
-  // if(isDirectMessage){
-  //   console.log("Currently online users:")
-  //   console.log(peers)
-  //   const element = document.getElementById('directMessageSelect');
-  //   if(!element){
-  //     console.error("Element not found");
-  //     return;
-  //   }	
-  //   recipientKey = element.innerText;
-  //   let recipient = null
-  //   for(const p of peers){
-  //     if(p.address === recipientKey){
-  //       recipient = p
-  //     }
-  //     }
-  //   console.log("Found recipient in logged in users. Sending direct message")
-  //   addMessageToChat("You: " + inputValue);
-  //   recipient.send(inputValue, recipient.port, recipient.address);
-  //   return;
-  // }
   
+  // see other comment for reversal reason
+  const isDirectMessage = currentMessageType === "Direct Message";
+  console.log("isDirectMessage: " + isDirectMessage);
+  if(isDirectMessage){
+    const selectElement = document.getElementById('directMessageSelect') as HTMLSelectElement ;
+    if(!selectElement){
+      console.error("Select element not found");
+      return;
+    }	
+    
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    console.log("Selected option: " + selectedOption);
+    let recipient = null;
+    for(const u of users){
+      if(u.displayName === selectedOption.textContent){
+        recipient = u
+      }
+    }
+    console.log("Recipient: " + recipient); 
+    if(!recipient){
+      console.error("Couldn't find recipient in logged in users");
+      return;
+    }
+    console.log("Found recipient in logged in users. Sending direct message")
+    addMessageToChat(`You to ${recipient.displayName}: ` + inputValue, true);
+    client.sendDirectMessage(inputValue, recipient);
+    return;
+  }
   
   if (inputValue) {
     addMessageToChat("You: " + inputValue);
@@ -81,29 +98,36 @@ function sendMessage(client: Client) {
   }
 }
 
-export function addMessageToChat(message: string) {
-  console.log("Adding message to chat: " + message);
+export function addMessageToChat(message: string, directMessage: boolean = false) {
+  console.log("Adding message to chat: " + message + " directMessage: " + directMessage);
   const chatBox = document.getElementById("messageBox");
   const newMessage = document.createElement("div");
   newMessage.textContent = message;
+  if(directMessage){
+    newMessage.style.fontStyle = "italic";
+  }
   if(!chatBox){
     console.error("messageBox element not found");
     return;
   }
   chatBox.appendChild(newMessage);
   chatBox.scrollTop = chatBox.scrollHeight;  // Scroll to bottom
-
 }
 
 function toggleDirectMessageSelect(client: Client){
   console.log("Toggling direct message select");
+  
   const peers = client.getPeers();
-  const element = document.getElementById('messageType');
-  if(!element){
-      console.error("Element not found");
-      return;
-  }		
-  const messageType = element.innerText;
+
+  const messageTypeElement = document.getElementById('sendMessageType') as HTMLSelectElement;
+  if(!messageTypeElement){
+    console.error("Message type element not found");
+    return;
+  }
+  const currentMessageType = messageTypeElement.value
+  console.log("Current message type: " + currentMessageType);
+  const isDirectMessage = currentMessageType === "Direct Message";
+  
   const directMessageSelect = document.getElementById('directMessageSelect');
   const directMessageSelectWrapper = document.getElementById('directMessageSelectWrapper');
   if(!directMessageSelect || !directMessageSelectWrapper){
@@ -111,20 +135,27 @@ function toggleDirectMessageSelect(client: Client){
       return;
   }
   
-  if (messageType === 'Direct Message') {
+  
+  if (isDirectMessage) {
     console.log("Direct message selected");    
     directMessageSelect.style.display = 'inline-block';
     directMessageSelectWrapper.style.display = 'inline-block'
     populateDirectMessageSelect(client);
   } else {
-        directMessageSelect.style.display = 'none';
-        directMessageSelectWrapper.style.display = 'none';
+    directMessageSelect.style.display = 'none';
+    directMessageSelectWrapper.style.display = 'none';
   }
 }
-function getDirectMessageOptions(client: Client){
+
+function getDirectMessageOptions(client: Client): string[]{
   const peers = client.getPeers();
-  return peers.map((p: any) => p.peerId);
+  const peerNames = peers.map((p: User) => p.displayName);
+  if(peerNames.length === 0){
+    peerNames.push("No users online");
+  }
+  return peerNames
 }
+
 function populateDirectMessageSelect(client: Client){
   console.log("Populating direct message select");
   const directMessageSelect = document.getElementById('directMessageSelect');

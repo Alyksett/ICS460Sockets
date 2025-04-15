@@ -5,6 +5,19 @@ import { Message } from './types.js';
 import { addMessageToChat } from './index.js';
 import { PEER_ID, SIGNING_KEY, CLUSTER_ID, SHARED_KEY } from './values.js';
 import type EventEmitter from 'socket:events';
+import { setupPeerMessages } from './utils.js';
+
+export class User{
+  displayName: string;
+  peer: Peer;
+  constructor(displayName: string, peer: Peer){
+    this.displayName = displayName;
+    this.peer = peer;
+  }
+  sendMessage(){
+    console.log("Sending message to " + this.displayName);
+  }
+}
 
 export class Client{
   displayName: string;
@@ -13,21 +26,28 @@ export class Client{
   clusterId: any;
   signingKeys: any;
   sharedKey: any;
-  peers: Peer[] = [];
+  users: User[] = [];
   subcluster: any;
 
-  constructor(displayName: string, peerId: any, socket: any, clusterId: any, signingKeys: any, sharedKey: any, peers: Peer[], subcluster: any){
+  constructor(displayName: string, peerId: any, socket: any, clusterId: any, signingKeys: any, sharedKey: any, users: User[], subcluster: any){
     this.displayName = displayName;
     this.peerId = peerId;
     this.socket = socket;
     this.clusterId = clusterId;
     this.signingKeys = signingKeys;
     this.sharedKey = sharedKey;
-    this.peers = peers;
+    this.users = users;
     this.subcluster = subcluster;
   }
   public getPeers(){
-    return this.peers;
+    return this.users;
+  }
+
+  public sendDirectMessage(message: any, recipient: User){
+    const packagedMessage = JSON.stringify({ message: message, peer: this.peerId, author: this.displayName });
+    const recipientId = recipient.peer.peerId;
+    this.subcluster.emit("directMessage", packagedMessage);
+
   }
 
   public sendMessage(message: any){
@@ -36,16 +56,6 @@ export class Client{
   }
 
   public handleMessage(message: any){
-    const parsedMessage = JSON.parse(message.toString());
-    const messageContent = parsedMessage.message;
-    const messagePeer = parsedMessage.peer;
-    const messageAuthor = parsedMessage.author;
-    if(messagePeer === this.peerId){
-      console.log("Message is from self. Ignoring.");
-      return;
-    }
-    const finalMessage = `${messageAuthor}: ${messageContent}`;
-    addMessageToChat(finalMessage);
     
   }
 
@@ -68,13 +78,10 @@ export async function startClient(displayName: string, userClusterId: string){
   const subcluster: ExtendedEventEmitter = await socket.subcluster({ sharedKey })
   
   subcluster.join();
-  let peers: Peer[] = Array.from(subcluster.peers.values()).map((peer: any) => peer.peerId)
   
-  const client = new Client(displayName, peerId, socket, clusterId, signingKeys, sharedKey, peers, subcluster);
-
-  subcluster.on("message", (message: any) => {
-    client.handleMessage(message);
-  });
+  const client = new Client(displayName, peerId, socket, clusterId, signingKeys, sharedKey, [], subcluster);
+  
+  setupPeerMessages(client, subcluster);
 
   return client;
 }
