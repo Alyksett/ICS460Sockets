@@ -15,6 +15,7 @@ lerna-debug.log*
 node_modules/
 
 # Default output directory
+dist/
 build/
 
 # Provisioning profile
