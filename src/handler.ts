@@ -14,6 +14,9 @@ export class User{
     this.displayName = displayName;
     this.peer = peer;
   }
+  sendMessage(){
+    console.log("Sending message to " + this.displayName);
+  }
 }
 
 export class Client{
@@ -40,22 +43,20 @@ export class Client{
     return this.users;
   }
 
+  public sendDirectMessage(message: any, recipient: User){
+    const packagedMessage = JSON.stringify({ message: message, peer: this.peerId, author: this.displayName });
+    const recipientId = recipient.peer.peerId;
+    this.subcluster.emit("directMessage", packagedMessage);
+
+  }
+
   public sendMessage(message: any){
     const buf = Buffer.from(JSON.stringify({ message: message, peer: this.peerId, author: this.displayName }));
     this.subcluster.emit("message", buf);
   }
 
   public handleMessage(message: any){
-    const parsedMessage = JSON.parse(message.toString());
-    const messageContent = parsedMessage.message;
-    const messagePeer = parsedMessage.peer;
-    const messageAuthor = parsedMessage.author;
-    if(messagePeer === this.peerId){
-      console.log("Message is from self. Ignoring.");
-      return;
-    }
-    const finalMessage = `${messageAuthor}: ${messageContent}`;
-    addMessageToChat(finalMessage);
+    
   }
 
 }

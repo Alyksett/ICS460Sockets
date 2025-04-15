@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="styles/login.css">
   </head>
   <body>
-    <script src="index.js" type="module" defer></script>
+    
     <!-- LOGIN -->
     <div id="login" style = "display: flex;">
       <div id="loginPage">
@@ -58,11 +58,11 @@
         </div>
         <!-- Message Type -->
         <div style="margin-top: 10px;">
-            Would you like to send this message as:
-            <select id="messageType" onchange="toggleDirectMessageSelect()">
+          Would you like to send this message as:
+          <select id="sendMessageType" onchange="toggleDirectMessageSelect()">
             <option>Broadcast</option>
             <option>Direct Message</option>
-        </select>
+          </select>
         <br>
         <div id="directMessageSelectWrapper" style="display: none;">
             Send message to:
@@ -70,10 +70,9 @@
         <select id="directMessageSelect" style="display: none;">    
             <!-- Options will be populated by JavaScript -->
         </select>
-        
       </div>
       </div>
     </div>
-  
+    <script src="index.js" type="module" defer></script>
   </body>
 </html>

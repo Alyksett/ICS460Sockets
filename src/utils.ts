@@ -1,6 +1,10 @@
 import { Client, User } from './handler.js';
 import { addMessageToChat } from './index.js';
 
+function pid(peerId: string){
+  return peerId.substring(0, 8);
+}
+
 export function setupPeerMessages(client: Client, subcluster: any){
   subcluster.on("requestName", (requesterMessage: any) => {
     _requestName(client, subcluster, requesterMessage);
@@ -11,7 +15,11 @@ export function setupPeerMessages(client: Client, subcluster: any){
   });
 
   subcluster.on("message", (message: any) => {
-    client.handleMessage(message);
+    _handleMessage(client, subcluster, message);
+  });
+  
+  subcluster.on("directMessage", (message: any) => {
+    _handleDirectMessage(client, subcluster, message);
   });
 
   subcluster.on("#join", (newPeer: any) => {    
@@ -23,9 +31,56 @@ export function setupPeerMessages(client: Client, subcluster: any){
 }
 
 
+function _handleDirectMessage(client: Client, subcluster: any, message: any){
+  console.log("Handling direct message");
+  const parsedMessage = JSON.parse(message.toString());
+  const messageContent = parsedMessage.message;
+  const messagePeer = parsedMessage.peer;
+  const messageAuthor = parsedMessage.author;
+  if(messagePeer === client.peerId){
+    console.log("Direct message is from self. Ignoring.");
+    return;
+  }
+  const finalMessage: string = `(Direct) ${messageAuthor}: ${messageContent}`;
+  addMessageToChat(finalMessage, true);
+}
+
+function _handleMessage(client: Client, subcluster: any, message: any){
+  const parsedMessage = JSON.parse(message.toString());
+  const messageContent = parsedMessage.message;
+  const messagePeer = parsedMessage.peer;
+  const messageAuthor = parsedMessage.author;
+  if(messagePeer === client.peerId){
+    console.log("Message is from self. Ignoring.");
+    return;
+  }
+  const finalMessage = `${messageAuthor}: ${messageContent}`;
+  addMessageToChat(finalMessage);
+}
+
+function _handleJoin(client: Client, subcluster: any, newPeer: any){
+  const newPeerId = newPeer.peerId;
+  if(newPeerId === client.peerId){
+    console.log("Self join detected. Ignoring.");
+    return;
+  }
+  const resolvedPeer = subcluster.peers.get(newPeerId);
+  
+  if(resolvedPeer){
+    console.log("Found peer that just joined: " + resolvedPeer.peerId);
+    resolvedPeer.emit("requestName", { peerId: client.peerId });
+  }else{
+    console.error("Peer not found in subcluster: " + pid(newPeerId));
+  }
+}
+
 function _requestName(client: Client, subcluster: any, requesterMessage: any){
   const json = JSON.parse(requesterMessage);
   const requesterId = json.peerId;
+  if(requesterId === client.peerId){
+    console.log("Self request detected. Ignoring.");
+    return;
+  }
   subcluster.peers.get(requesterId).emit("resolveName", { peerId: client.peerId, displayName: client.displayName });
 }
 
@@ -35,20 +90,15 @@ function _resolveName(client: Client, subcluster: any, peerMessage: any){
   const peerId = json.peerId
   const resolvedPeer = subcluster.peers.get(peerId);
   if(!resolvedPeer){
-    console.error("Peer not found in subcluster");
+    console.error(`Peer with id: ${pid(peerId)} not found in subcluster`);
+    return;
   }
   const newUser = new User(peerName, resolvedPeer);
   client.users.push(newUser);
   addMessageToChat(`${peerName} has joined the chat.`);
 }
 
-function _handleJoin(client: Client, subcluster: any, newPeer: any){
-  const resolvedPeer = subcluster.peers.get(newPeer.peerId);
-  if(resolvedPeer){
-    console.log("Found peer that just joined: " + resolvedPeer.peerId);
-    resolvedPeer.emit("requestName", { peerId: client.peerId });
-  }
-}
+
 
 function _handleLeave(client: Client, subcluster: any, peer: any){
   console.log("============================================")
