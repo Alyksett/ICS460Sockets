@@ -15,7 +15,7 @@ document.getElementById('loginForm')?.addEventListener('submit', (event) => {
 
   console.log('Logged in as:', displayName, 'Cluster ID:', clusterId);
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
-  (document.getElementById('chatBox') as HTMLElement).style.display = 'block';
+  (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
 });
 
 

@@ -12,7 +12,7 @@ document.getElementById('loginForm')?.addEventListener('submit', (event) => {
     const clusterId = document.getElementById('clusterId').value;
     console.log('Logged in as:', displayName, 'Cluster ID:', clusterId);
     document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('chatBox').style.display = 'block';
+    document.getElementById('chatBox').style.display = 'flex';
 });
 function sendMessage(client) {
     const peerNames = client.getPeers();

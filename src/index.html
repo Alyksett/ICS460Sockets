@@ -17,27 +17,39 @@
     >
     <style type="text/css"></style>
     <link rel="stylesheet" href="styles/global.css">
+    <link rel="stylesheet" href="styles/chatbox.css">
+    <link rel="stylesheet" href="styles/login.css">
   </head>
   <body>
     <script src="index.js" type="module" defer></script>
     <!-- LOGIN -->
-    <div id="login" style = "display: block;">
+    <div id="login" style = "display: flex;">
       <div id="loginPage">
-        <h3>Login</h3>
+        <h2>Login</h2>
         <form id="loginForm">
-        <label for="displayName">Display Name:</label>
-        <input type="text" id="displayName" required />
-        <br />
-        <label for="clusterId">Cluster ID:</label>
-        <input type="text" id="clusterId" required />
-        <br />
-        <button type="submit">Login</button>
+          <div id="nameLogin">
+            <label for="displayName">Display Name:</label>
+            <input type="text" id="displayName" required />
+          </div>
+            <br />
+          <div id="clusterLogin">
+            <label for="clusterId">Cluster ID:</label>
+            <input type="text" id="clusterId" required />
+            <br />
+          </div>
+          <div id="loginSubmitButton">
+            <button  type="submit">Login</button>
+          </div>
         </form>
     </div>
     </div>    
     <!-- CHAT -->
     <div id="chatBox" style="display: none;">
+      
       <div id= "chatPage" style="display: flex; flex-direction: column; align-items: center;">
+        <!-- Chat Box -->
+        <div id="messageBox" style="border-color: black;"></div>
+         
         <!-- Message Input -->
         <div>
             <input type="text" id="messageInput" placeholder="Type a message..." />
@@ -58,7 +70,8 @@
             
             <!-- Options will be populated by JavaScript -->
         </select>
-        </div>
+        
+      </div>
       </div>
     </div>
   
