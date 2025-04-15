@@ -1,4 +1,3 @@
-
 logs
 # Logs
 *.log
@@ -15,11 +14,13 @@ lerna-debug.log*
 node_modules/
 
 # Default output directory
+
+dist/
 build/
+peer/src/
 
 # Provisioning profile
 *.mobileprovision
 
 # extension build artifacts
 *.o
-

@@ -7,6 +7,7 @@ import { PEER_ID, SIGNING_KEY, CLUSTER_ID, SHARED_KEY } from './values.js';
 import type EventEmitter from 'socket:events';
 
 export class Client{
+  displayName: string;
   peerId: any;
   socket: any;
   clusterId: any;
@@ -15,7 +16,8 @@ export class Client{
   peers: Peer[] = [];
   subcluster: any;
 
-  constructor(peerId: any, socket: any, clusterId: any, signingKeys: any, sharedKey: any, peers: Peer[], subcluster: any){
+  constructor(displayName: string, peerId: any, socket: any, clusterId: any, signingKeys: any, sharedKey: any, peers: Peer[], subcluster: any){
+    this.displayName = displayName;
     this.peerId = peerId;
     this.socket = socket;
     this.clusterId = clusterId;
@@ -29,7 +31,7 @@ export class Client{
   }
 
   public sendMessage(message: any){
-    const buf = Buffer.from(JSON.stringify({ message: message, peer: this.peerId }));
+    const buf = Buffer.from(JSON.stringify({ message: message, peer: this.peerId, author: this.displayName }));
     this.subcluster.emit("message", buf);
   }
 
@@ -37,11 +39,13 @@ export class Client{
     const parsedMessage = JSON.parse(message.toString());
     const messageContent = parsedMessage.message;
     const messagePeer = parsedMessage.peer;
+    const messageAuthor = parsedMessage.author;
     if(messagePeer === this.peerId){
       console.log("Message is from self. Ignoring.");
       return;
     }
-    addMessageToChat("Received message: " + messageContent);
+    const finalMessage = `${messageAuthor}: ${messageContent}`;
+    addMessageToChat(finalMessage);
     
   }
 
@@ -50,13 +54,13 @@ type ExtendedEventEmitter = EventEmitter & {
   [key: string]: any; // Allows arbitrary properties
 };
 
-export async function startClient(){
+export async function startClient(displayName: string, userClusterId: string){
   console.log("Starting client...");
   
   const peerId = await Encryption.createId(PEER_ID)
   const signingKeys = await Encryption.createKeyPair(SIGNING_KEY)
 
-  const clusterId = await Encryption.createClusterId(CLUSTER_ID)
+  const clusterId = await Encryption.createClusterId(userClusterId)
   const sharedKey = await Encryption.createSharedKey(SHARED_KEY)
 
   const socket = await network({ peerId, clusterId, signingKeys })
@@ -66,7 +70,7 @@ export async function startClient(){
   subcluster.join();
   let peers: Peer[] = Array.from(subcluster.peers.values()).map((peer: any) => peer.peerId)
   
-  const client = new Client(peerId, socket, clusterId, signingKeys, sharedKey, peers, subcluster);
+  const client = new Client(displayName, peerId, socket, clusterId, signingKeys, sharedKey, peers, subcluster);
 
   subcluster.on("message", (message: any) => {
     client.handleMessage(message);
