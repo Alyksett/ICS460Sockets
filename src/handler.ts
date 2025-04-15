@@ -5,6 +5,7 @@ import { Message } from './types.js';
 import { addMessageToChat } from './index.js';
 import { PEER_ID, SIGNING_KEY, CLUSTER_ID, SHARED_KEY } from './values.js';
 import type EventEmitter from 'socket:events';
+import { resolve } from 'socket:url';
 
 export class Client{
   displayName: string;
@@ -72,8 +73,56 @@ export async function startClient(displayName: string, userClusterId: string){
   
   const client = new Client(displayName, peerId, socket, clusterId, signingKeys, sharedKey, peers, subcluster);
 
+  subcluster.on("requestName", (requesterMessage: any) => {
+    console.log("RequestName====================================")
+    const json = JSON.parse(requesterMessage);
+    const requesterId = json.peerId;
+    subcluster.peers.get(requesterId).emit("resolveName", { peerId: client.peerId, displayName: client.displayName });
+  })
+
+  subcluster.on("resolveName", (peer: any) => {
+    console.log("====================================")
+    console.log("Resolve response: " + peer);
+    const json = JSON.parse(peer);
+    const peerId = json.peerId;
+    const peerName = json.displayName;
+    console.log(`Matched peer ${peerId} with name ${peerName}`);
+    // const peerIndex = client.peers.findIndex((p: any) => p.peerId === peerId);
+    // if (peerIndex === -1) {
+    //   client.peers.push({ peerId, displayName: peerName });
+    // } else {
+    //   client.peers[peerIndex].displayName = peerName;
+    // }
+    console.log("Current peers: " + client.peers);
+    addMessageToChat(`${peerName} has joined the chat.`);
+  });
+
   subcluster.on("message", (message: any) => {
     client.handleMessage(message);
+  });
+
+  subcluster.on("#join", (newPeer: any) => {
+    console.log("====================================")
+    console.log("Peer joined: " + newPeer.peerId);
+    console.log(subcluster.peers.get(newPeer.peerId));
+    console.log("====================================")
+    
+    const resolvedPeer = subcluster.peers.get(newPeer.peerId);
+    if(resolvedPeer){
+      console.log("Found peer that just joined: " + resolvedPeer.peerId);
+      resolvedPeer.emit("requestName", { peerId: client.peerId });
+    }
+    
+    // addMessageToChat(`${peer.peerId} has joined the chat.`);
+    // console.log("sending a requestName event");
+    // subcluster.emit("requestName", { peerId: peer.peerId });
+  });
+  subcluster.on("#leave", (peer: any) => {
+    console.log("Peer left: " + peer.peerId);
+    peers = Array.from(subcluster.peers.values()).map((peer: any) => peer.peerId)
+    client.peers = peers;
+    console.log("Current peers: " + peers);
+    addMessageToChat(`${peer.peerId} has left the chat.`);
   });
 
   return client;
