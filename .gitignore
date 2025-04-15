@@ -1,4 +1,3 @@
-
 logs
 # Logs
 *.log
@@ -15,9 +14,10 @@ lerna-debug.log*
 node_modules/
 
 # Default output directory
-dist/**
-build/
 
+dist/
+build/
+dist2/
 # Provisioning profile
 *.mobileprovision
 
