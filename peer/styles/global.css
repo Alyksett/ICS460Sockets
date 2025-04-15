@@ -1,0 +1,25 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+body {
+    display: grid;
+    justify-content: center;
+    align-content: center;
+    font-family: helvetica, sans-serif;
+    overflow: hidden;
+    background-color: #f0f0f0;
+}
+button {
+    padding: 8px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+}
+main{
+    background-color: black;
+    border: solid;
+    border-color: green;
+}

@@ -1,22 +1,31 @@
 // Must import from *.js... for some reason...
 import { Client, startClient } from './handler.js'
 
-(async () => {
-  const client = await startClient();
-  (window as any).sendMessage = () => sendMessage(client!);
-  (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client!);
-  console.log("Client initialized");
-})();
 
-document.getElementById('loginForm')?.addEventListener('submit', (event) => {
+document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
   event.preventDefault();
   const displayName = (document.getElementById('displayName') as HTMLInputElement).value;
   const clusterId = (document.getElementById('clusterId') as HTMLInputElement).value;
+  let client: Client;
 
-  console.log('Logged in as:', displayName, 'Cluster ID:', clusterId);
+  try {
+    console.log("Starting client...");
+    client = await startClient(displayName, clusterId);
+    console.log("Client started successfully");
+  } catch (error) {
+    console.error("Error starting client:", error);
+    return;
+  }
+
+  (window as any).sendMessage = () => sendMessage(client);
+  (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
+  console.log("Client initialized");
+
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
 });
+
+
 
 
 function sendMessage(client: Client) {
@@ -73,11 +82,11 @@ function sendMessage(client: Client) {
 
 export function addMessageToChat(message: string) {
   console.log("Adding message to chat: " + message);
-  const chatBox = document.getElementById("chatBox");
+  const chatBox = document.getElementById("messageBox");
   const newMessage = document.createElement("div");
   newMessage.textContent = message;
   if(!chatBox){
-    console.error("ChatBox element not found");
+    console.error("messageBox element not found");
     return;
   }
   chatBox.appendChild(newMessage);
@@ -96,10 +105,10 @@ function toggleDirectMessageSelect(client: Client){
   const messageType = element.innerText;
   const directMessageSelect = document.getElementById('directMessageSelect');
   const directMessageSelectWrapper = document.getElementById('directMessageSelectWrapper');
-    if(!directMessageSelect || !directMessageSelectWrapper){
-        console.error("Element not found");
-        return;
-    }
+  if(!directMessageSelect || !directMessageSelectWrapper){
+      console.error("Element not found");
+      return;
+  }
   
   if (messageType === 'Direct Message') {
     console.log("Direct message selected");    

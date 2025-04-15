@@ -1,13 +1,27 @@
 // Must import from *.js... for some reason...
 import { Client, startClient } from './handler.js';
-(async () => {
-    const client = await startClient();
+document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const displayName = document.getElementById('displayName').value;
+    const clusterId = document.getElementById('clusterId').value;
+    let client;
+    try {
+        console.log("Starting client...");
+        client = await startClient(displayName, clusterId);
+        console.log("Client started successfully");
+    }
+    catch (error) {
+        console.error("Error starting client:", error);
+        return;
+    }
     window.sendMessage = () => sendMessage(client);
     window.toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
     console.log("Client initialized");
-})();
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('chatBox').style.display = 'flex';
+});
 function sendMessage(client) {
-    const peers = client.getPeers();
+    const peerNames = client.getPeers();
     const inputElement = document.getElementById("messageInput");
     let inputValue = "";
     if (inputElement) {
@@ -54,11 +68,11 @@ function sendMessage(client) {
 }
 export function addMessageToChat(message) {
     console.log("Adding message to chat: " + message);
-    const chatBox = document.getElementById("chatBox");
+    const chatBox = document.getElementById("messageBox");
     const newMessage = document.createElement("div");
     newMessage.textContent = message;
     if (!chatBox) {
-        console.error("ChatBox element not found");
+        console.error("messageBox element not found");
         return;
     }
     chatBox.appendChild(newMessage);

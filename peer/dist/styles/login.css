@@ -1,0 +1,20 @@
+#loginPage{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;   
+}
+
+#nameLogin{
+    display: grid;
+    grid-template-columns: 2fr 2fr;
+
+}
+#clusterLogin{
+    display: grid;
+    grid-template-columns: 2fr 2fr;    
+}
+
+#loginSubmitButton{
+    display: grid;
+}
