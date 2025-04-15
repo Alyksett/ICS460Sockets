@@ -1,4 +1,3 @@
-// Must import from *.js... for some reason...
 import { Client, startClient, User } from './handler.js'
 
 document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
@@ -21,6 +20,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
 
   (window as any).sendMessage = () => sendMessage(client);
   (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
+  (window as any).handleLogout = () => handleLogout(client);
   console.log("Client initialized");
   
   (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}`;
@@ -28,21 +28,9 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
 });
 
-
-// document.addEventListener('change', (event) => {
-//   const target = event.target as HTMLSelectElement;
-//   if (target && target.id === 'sendMessageType') {
-//     currentMessageType = target.value;
-//     console.log("Message type changed to: " + currentMessageType);
-//   }
-// });
-// document.addEventListener('change', (event) => {
-//   const target = event.target as HTMLSelectElement;
-//   if (target && target.id === 'directMessageSelect') {
-//     currentSelectedUser = target.innerText;
-//     console.log("Current selected user changed to: " + currentSelectedUser);
-//   }
-// });
+function handleLogout(client: Client){
+  client.handleShutdown();
+}
 
 function sendMessage(client: Client) {
   const users: User[] = client.getPeers();

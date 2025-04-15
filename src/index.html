@@ -23,7 +23,7 @@
   <body>
     
     <!-- LOGIN -->
-    <div id="login" style = "display: flex;">
+    <div id="login" style = "display: grid;">
       <div id="loginPage">
         <h2>Login</h2>
         <form id="loginForm">
@@ -72,6 +72,11 @@
         </select>
       </div>
       </div>
+    </div>
+    <div id="logoutButtonContainer">
+      <button id="logoutButton" onclick="handleLogout()">
+        Logout
+      </button>
     </div>
     <script src="index.js" type="module" defer></script>
   </body>

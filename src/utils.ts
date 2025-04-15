@@ -4,6 +4,8 @@ import { addMessageToChat } from './index.js';
 function pid(peerId: string){
   return peerId.substring(0, 8);
 }
+// do something better than this
+export const listenerKeys: string[] = ["#join", "#leave", "requestName", "resolveName", "message", "directMessage"];
 
 export function setupPeerMessages(client: Client, subcluster: any){
   subcluster.on("requestName", (requesterMessage: any) => {
@@ -25,7 +27,7 @@ export function setupPeerMessages(client: Client, subcluster: any){
   subcluster.on("#join", (newPeer: any) => {    
     _handleJoin(client, subcluster, newPeer);
   });
-  subcluster.on("#leave", (peer: any) => {
+  subcluster.on("end", (peer: any) => {
     _handleLeave(client, subcluster, peer);
   });
 }
@@ -101,9 +103,11 @@ function _resolveName(client: Client, subcluster: any, peerMessage: any){
 
 
 function _handleLeave(client: Client, subcluster: any, peer: any){
-  console.log("============================================")
-  console.log("________DETECTED LEAVE__________")
-  console.log("PAYLOAD: ")
-  console.log(JSON.stringify(peer))
-  addMessageToChat(`${peer.peerId} has left the chat.`);
+  console.log("Handling leave");
+  const payload = JSON.parse(peer);
+  const leftPeerName: string | null = client.removePeer(payload.peerId);
+  if(!leftPeerName){
+    return;
+  }
+  addMessageToChat(`${leftPeerName} has left the chat.`);
 }

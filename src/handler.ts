@@ -5,7 +5,7 @@ import { Message } from './types.js';
 import { addMessageToChat } from './index.js';
 import { PEER_ID, SIGNING_KEY, CLUSTER_ID, SHARED_KEY } from './values.js';
 import type EventEmitter from 'socket:events';
-import { setupPeerMessages } from './utils.js';
+import { setupPeerMessages, listenerKeys } from './utils.js';
 
 export class User{
   displayName: string;
@@ -19,15 +19,19 @@ export class User{
   }
 }
 
+type ExtendedEventEmitter = EventEmitter & {
+  [key: string]: any; // Allows arbitrary properties
+};
+
 export class Client{
   displayName: string;
   peerId: any;
-  socket: any;
+  socket: ExtendedEventEmitter;
   clusterId: any;
   signingKeys: any;
   sharedKey: any;
   users: User[] = [];
-  subcluster: any;
+  subcluster: ExtendedEventEmitter;
 
   constructor(displayName: string, peerId: any, socket: any, clusterId: any, signingKeys: any, sharedKey: any, users: User[], subcluster: any){
     this.displayName = displayName;
@@ -38,6 +42,43 @@ export class Client{
     this.sharedKey = sharedKey;
     this.users = users;
     this.subcluster = subcluster;
+  }
+
+  public handleShutdown(){
+    console.log("Shutting down client...");
+    const payload = JSON.stringify({"peerId": this.peerId});
+    this.subcluster.emit("end", payload);
+
+    for(const key of listenerKeys){
+      console.log("Removing listener for " + key);
+      this.subcluster.removeAllListeners(key);
+    }
+    
+    // this.subcluster.removeAllListeners();
+    // this.socket.removeAllListeners();
+    // this.socket.leave();
+    // this.subcluster.leave();
+    // this.socket.close();
+  }
+  
+  private getPeerById(peerId: string): User | null {2
+    return this.users.find(user => user.peer.peerId === peerId) || null;
+  }
+
+  public removePeer(peerId: string){
+    console.log("Start removePeer" + peerId);
+    console.log("Users before: " + this.users.map((u: User) => u.displayName));
+    const user: User | null = this.getPeerById(peerId);
+    if(!user){
+      console.error("Couldn't find user with id: " + peerId);
+      return null;
+    }
+    
+    this.users = this.users.filter(u => u.peer.peerId !== peerId);
+    console.log("Removed user " + user.displayName);
+  
+    console.log("Users after: " + this.users.map((u: User) => u.displayName));
+    return user.displayName;
   }
   public getPeers(){
     return this.users;
@@ -58,11 +99,7 @@ export class Client{
   public handleMessage(message: any){
     
   }
-
 }
-type ExtendedEventEmitter = EventEmitter & {
-  [key: string]: any; // Allows arbitrary properties
-};
 
 export async function startClient(displayName: string, userClusterId: string){
   console.log("Starting client...");
@@ -77,6 +114,8 @@ export async function startClient(displayName: string, userClusterId: string){
   
   const subcluster: ExtendedEventEmitter = await socket.subcluster({ sharedKey })
   
+  // subcluster.join();
+  // subcluster.leave();
   subcluster.join();
   
   const client = new Client(displayName, peerId, socket, clusterId, signingKeys, sharedKey, [], subcluster);
