@@ -17,6 +17,7 @@ node_modules/
 
 dist/
 build/
+peer/src/
 
 # Provisioning profile
 *.mobileprovision
