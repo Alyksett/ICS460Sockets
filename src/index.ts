@@ -30,6 +30,8 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
 
 function handleLogout(client: Client){
   client.handleShutdown();
+  (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
+  (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
 
 function sendMessage(client: Client) {

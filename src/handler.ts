@@ -55,14 +55,9 @@ export class Client{
       this.socket.removeAllListeners(key);
     }
 
-    this.subcluster.off("message", () => {});
     console.log("subcluster listenerCount: " + this.subcluster.listenerCount("message"));
     console.log("subcluster listener for message: " + this.subcluster.listeners("message"));
-    // this.subcluster.leave()
-    // this.subcluster.removeAllListeners();
-    // this.socket.removeAllListeners();
-    // this.socket.leave();
-    // this.subcluster.leave();
+    
     this.socket.close();
   }
   
@@ -115,8 +110,7 @@ export async function startClient(displayName: string, userClusterId: string){
   
   const subcluster: ExtendedEventEmitter = await socket.subcluster({ sharedKey })
   
-  // subcluster.join();
-  // subcluster.leave();
+  ;
   subcluster.join();
   
   const client = new Client(displayName, peerId, socket, clusterId, signingKeys, sharedKey, [], subcluster);
