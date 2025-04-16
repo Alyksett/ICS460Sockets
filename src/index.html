@@ -23,7 +23,7 @@
   <body>
     
     <!-- LOGIN -->
-    <div id="login" style = "display: flex;">
+    <div id="login" style = "display: grid;">
       <div id="loginPage">
         <h2>Login</h2>
         <form id="loginForm">
@@ -70,6 +70,11 @@
         <select id="directMessageSelect" style="display: none;">    
             <!-- Options will be populated by JavaScript -->
         </select>
+      </div>
+      <div id="logoutButtonContainer">
+        <button id="logoutButton" onclick="handleLogout()">
+          Logout
+        </button>
       </div>
       </div>
     </div>

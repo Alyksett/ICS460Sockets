@@ -15,3 +15,14 @@
 #directMessage{
   font-style: italic;
 }
+
+#logoutButtonContainer{
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+#logoutButton{
+  
+  background-color: #d82727;
+}
