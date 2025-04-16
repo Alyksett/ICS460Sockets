@@ -15,6 +15,7 @@ There are three scripts for running:
 ## FEATURES:
 - Login with username/cluster ID (Cluster ID === "server" or "room" [Not actually a server])
 - Broadcast and direct messaging (When another user is online)
+- Logging out once you're logged in (Can also log in)
 
 ## Developer Notes:
 
@@ -23,3 +24,9 @@ There are three scripts for running:
 `values.ts` holds constants.
 
 `utils.ts` is a good place to see the "commands" or "routes". Note that all the functions (*.on("...", ...)) are **receiver** functions, i.e they handle the **receiving** of messages (There is also some cluster/peer sending happening).
+
+
+## NOTE
+
+There's a lot going on in socketsupply when sending packets back and fourth so sometimes messages are slow, sometimes it takes a bit for the "joined the chat" message to come through,
+sometimes (often times) messages get "stuck" somewhere on the wire and will send 10 minutes later on a completely different run. The prize for solving this is 1 million dollars because I have no idea why it's happening and it's both obnoxious and confusing and I want it to stop
