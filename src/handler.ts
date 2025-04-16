@@ -5,7 +5,7 @@ import { Message } from './types.js';
 import { addMessageToChat } from './index.js';
 import { PEER_ID, SIGNING_KEY, CLUSTER_ID, SHARED_KEY } from './values.js';
 import type EventEmitter from 'socket:events';
-import { setupPeerMessages, listenerKeys } from './utils.js';
+import { setupPeerMessages, listenerKeys, _handleMessage } from './utils.js';
 
 export class User{
   displayName: string;
@@ -47,18 +47,23 @@ export class Client{
   public handleShutdown(){
     console.log("Shutting down client...");
     const payload = JSON.stringify({"peerId": this.peerId});
-    this.subcluster.emit("end", payload);
-
+    this.subcluster.emit("logout", payload);
+    // This handles cutting off the listeners so we can't receive messages (But it doesn't really work...)
     for(const key of listenerKeys){
       console.log("Removing listener for " + key);
       this.subcluster.removeAllListeners(key);
+      this.socket.removeAllListeners(key);
     }
-    
+
+    this.subcluster.off("message", () => {});
+    console.log("subcluster listenerCount: " + this.subcluster.listenerCount("message"));
+    console.log("subcluster listener for message: " + this.subcluster.listeners("message"));
+    // this.subcluster.leave()
     // this.subcluster.removeAllListeners();
     // this.socket.removeAllListeners();
     // this.socket.leave();
     // this.subcluster.leave();
-    // this.socket.close();
+    this.socket.close();
   }
   
   private getPeerById(peerId: string): User | null {2
@@ -66,18 +71,14 @@ export class Client{
   }
 
   public removePeer(peerId: string){
-    console.log("Start removePeer" + peerId);
-    console.log("Users before: " + this.users.map((u: User) => u.displayName));
+    
     const user: User | null = this.getPeerById(peerId);
     if(!user){
       console.error("Couldn't find user with id: " + peerId);
       return null;
-    }
-    
+    }    
     this.users = this.users.filter(u => u.peer.peerId !== peerId);
-    console.log("Removed user " + user.displayName);
-  
-    console.log("Users after: " + this.users.map((u: User) => u.displayName));
+
     return user.displayName;
   }
   public getPeers(){

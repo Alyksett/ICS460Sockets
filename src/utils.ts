@@ -27,7 +27,7 @@ export function setupPeerMessages(client: Client, subcluster: any){
   subcluster.on("#join", (newPeer: any) => {    
     _handleJoin(client, subcluster, newPeer);
   });
-  subcluster.on("end", (peer: any) => {
+  subcluster.on("logout", (peer: any) => {
     _handleLeave(client, subcluster, peer);
   });
 }
@@ -47,7 +47,7 @@ function _handleDirectMessage(client: Client, subcluster: any, message: any){
   addMessageToChat(finalMessage, true);
 }
 
-function _handleMessage(client: Client, subcluster: any, message: any){
+export function _handleMessage(client: Client, subcluster: any, message: any){
   const parsedMessage = JSON.parse(message.toString());
   const messageContent = parsedMessage.message;
   const messagePeer = parsedMessage.peer;
@@ -101,7 +101,9 @@ function _resolveName(client: Client, subcluster: any, peerMessage: any){
 }
 
 
-
+/*
+When we have received a leave event
+*/
 function _handleLeave(client: Client, subcluster: any, peer: any){
   console.log("Handling leave");
   const payload = JSON.parse(peer);
