@@ -23,18 +23,41 @@ export function setupPeerMessages(client: Client, subcluster: any){
   subcluster.on("directMessage", (message: any) => {
     _handleDirectMessage(client, subcluster, message);
   });
+  client.socket.on("directMessage", (message: any) => {
+    _handleDirectMessageSocket(client, subcluster, message);
+  });
 
   subcluster.on("#join", (newPeer: any) => {    
     _handleJoin(client, subcluster, newPeer);
   });
   subcluster.on("logout", (peer: any) => {
+    // _handleLeave(client, subcluster, peer);
     _handleLeave(client, subcluster, peer);
   });
+  // subcluster.on("typing", (peer: any) => {
+  //   _handleTyping(client, subcluster, peer);
+  // });
+  // subcluster.on("typing", (peer: any) => {
+  //   _handleTyping(client, subcluster, peer);
+  // });
 }
 
 
 function _handleDirectMessage(client: Client, subcluster: any, message: any){
   console.log("Handling direct message");
+  const parsedMessage = JSON.parse(message.toString());
+  const messageContent = parsedMessage.message;
+  const messagePeer = parsedMessage.peer;
+  const messageAuthor = parsedMessage.author;
+  if(messagePeer === client.peerId){
+    console.log("Direct message is from self. Ignoring.");
+    return;
+  }
+  const finalMessage: string = `(Direct) ${messageAuthor}: ${messageContent}`;
+  addMessageToChat(finalMessage, true);
+}
+function _handleDirectMessageSocket(client: Client, subcluster: any, message: any){
+  console.log("Handling direct message SOCKET!!!!!!!!!!!!!");
   const parsedMessage = JSON.parse(message.toString());
   const messageContent = parsedMessage.message;
   const messagePeer = parsedMessage.peer;
@@ -67,7 +90,19 @@ function _handleJoin(client: Client, subcluster: any, newPeer: any){
     return;
   }
   const resolvedPeer = subcluster.peers.get(newPeerId);
-  
+  // console.log("=============================================")
+  // console.log("Name: " + resolvedPeer.constructor.name);
+  // console.log("---------------------------------------------")
+  // console.log("All Properties: " + Object.getOwnPropertyNames(resolvedPeer));  
+  // console.log("---------------------------------------------")
+  // console.log("_peer Name: " + ((resolvedPeer._peer.constructor.name)));
+  // console.log("---------------------------------------------")
+  // console.log("_peer property names: " + JSON.stringify(Object.getOwnPropertyNames(resolvedPeer._peer)));
+  // console.log("---------------------------------------------")
+  // console.log("_peer prototype: " + JSON.stringify(Object.getPrototypeOf(resolvedPeer._peer)));
+  // console.log("---------------------------------------------")
+  // console.log("Prototype: " + JSON.stringify(Object.getPrototypeOf(resolvedPeer)));
+  // console.log("=============================================")
   if(resolvedPeer){
     console.log("Found peer that just joined: " + resolvedPeer.peerId);
     resolvedPeer.emit("requestName", { peerId: client.peerId });

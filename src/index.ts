@@ -26,7 +26,58 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}`;
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
+  const messageInput = document.getElementById('messageInput') as HTMLInputElement;
+  messageInput?.addEventListener('input', () => {
+    if (messageInput.value.trim() === '') {
+      isTyping(client);
+    } else {
+      stoppedTyping(client);
+    }
+  });
 });
+
+function getDirectMessageUser(client: Client){
+  const selectElement = document.getElementById('directMessageSelect') as HTMLSelectElement ;
+  if(!selectElement){
+    console.error("Select element not found");
+    return null;
+  }	
+  const selectedOption = selectElement.options[selectElement.selectedIndex];
+  let recipient = null;
+  for(const u of client.getPeers()){
+    if(u.displayName === selectedOption.textContent){
+      recipient = u
+    }
+  }
+  if(!recipient){
+    return null;
+  }
+  return recipient;
+}
+
+function isTyping(client: Client){
+  const isDirectMessage = (document.getElementById('sendMessageType') as HTMLSelectElement).value === "Direct Message";
+  if(isDirectMessage){
+    const recipient = getDirectMessageUser(client);
+    if(recipient){
+      // client.sendTypingDirect("is typing...", recipient);
+    }
+  }else{
+    client.sendTyping("is typing...");1
+  }
+}
+
+function stoppedTyping(client: Client){
+  const isDirectMessage = (document.getElementById('sendMessageType') as HTMLSelectElement).value === "Direct Message";
+  if(isDirectMessage){
+    const recipient = getDirectMessageUser(client);
+    if(recipient){
+      client.stoppedTypingDirect("stopped typing...", recipient);
+    }
+  }else{
+    client.stoppedTyping("stopped typing...");
+  }
+}
 
 function handleLogout(client: Client){
   client.handleShutdown();
@@ -55,26 +106,11 @@ function sendMessage(client: Client) {
   const isDirectMessage = currentMessageType === "Direct Message";
   console.log("isDirectMessage: " + isDirectMessage);
   if(isDirectMessage){
-    const selectElement = document.getElementById('directMessageSelect') as HTMLSelectElement ;
-    if(!selectElement){
-      console.error("Select element not found");
-      return;
-    }	
-    
-    const selectedOption = selectElement.options[selectElement.selectedIndex];
-    console.log("Selected option: " + selectedOption);
-    let recipient = null;
-    for(const u of users){
-      if(u.displayName === selectedOption.textContent){
-        recipient = u
-      }
-    }
-    console.log("Recipient: " + recipient); 
+    const recipient = getDirectMessageUser(client);
     if(!recipient){
-      console.error("Couldn't find recipient in logged in users");
+      console.error("No recipient found");
       return;
     }
-    console.log("Found recipient in logged in users. Sending direct message")
     addMessageToChat(`You to ${recipient.displayName}: ` + inputValue, true);
     client.sendDirectMessage(inputValue, recipient);
     return;

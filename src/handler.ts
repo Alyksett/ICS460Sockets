@@ -1,15 +1,24 @@
 import { network, Encryption } from 'socket:network'
-import { Peer } from 'socket:latica/index';
+// import { Peer } from 'socket:latica/index';
 import Buffer from 'socket:buffer';
 import { Message } from './types.js';
 import { addMessageToChat } from './index.js';
 import { PEER_ID, SIGNING_KEY, CLUSTER_ID, SHARED_KEY } from './values.js';
 import type EventEmitter from 'socket:events';
 import { setupPeerMessages, listenerKeys, _handleMessage } from './utils.js';
+import { Peer } from 'socket:latica/index'
+import { rand64 } from 'socket:crypto';
 
+// import { createSocket, Socket } from 'dgram';
+
+// import * as dgram from 'dgram';
+
+
+
+// peer.publish("test", {message: Buffer.from("test")})
 export class User{
   displayName: string;
-  peer: Peer;
+  peer: any;
   constructor(displayName: string, peer: Peer){
     this.displayName = displayName;
     this.peer = peer;
@@ -83,8 +92,19 @@ export class Client{
   public sendDirectMessage(message: any, recipient: User){
     const packagedMessage = JSON.stringify({ message: message, peer: this.peerId, author: this.displayName });
     const recipientId = recipient.peer.peerId;
-    this.subcluster.emit("directMessage", packagedMessage);
-
+    const peer = recipient.peer._peer;
+    const buf = Buffer.from(packagedMessage);
+    
+    // console.log("=============================================")
+    // console.log("Name: " + peer.constructor.name);
+    // console.log("---------------------------------------------")
+    // console.log("Properties: " + Object.keys(peer));
+    // console.log("---------------------------------------------")
+    // console.log("All Properties: " + Object.getOwnPropertyNames(peer));
+    // console.log("---------------------------------------------")
+    // console.log("Prototype: " + JSON.stringify(Object.getPrototypeOf(peer), null, 2));
+    // console.log("=============================================")
+    recipient.peer.send(buf, peer.port, peer.address );
   }
 
   public sendMessage(message: any){
@@ -92,13 +112,27 @@ export class Client{
     this.subcluster.emit("message", buf);
   }
 
-  public handleMessage(message: any){
-    
+  public sendTypingDirect(user: User){
+    const recipientId = user.peer.peerId;
+    const payload = JSON.stringify({ peerId: this.peerId, message: "typing..." });
+    this.subcluster.emit("typing", payload);
+  }
+  public stoppedTypingDirect(message: string, recipient: User){
+    const recipientId = recipient.peer.peerId;
+    const payload = JSON.stringify({ peerId: this.peerId, message: message });
+    this.subcluster.emit("stoppedTyping", payload);
+  }
+  public sendTyping(message: string){
+    const payload = JSON.stringify({ peerId: this.peerId, message: message });
+    this.subcluster.emit("typing", payload);
+  }
+  public stoppedTyping(message: string){
+    const payload = JSON.stringify({ peerId: this.peerId, message: message });
+    this.subcluster.emit("stoppedTyping", payload);
   }
 }
-
-export async function startClient(displayName: string, userClusterId: string){
-  console.log("Starting client...");
+async function clusterize(displayName: string, userClusterId: string){
+  console.log("Starting cluster client...");
   
   const peerId = await Encryption.createId(PEER_ID)
   const signingKeys = await Encryption.createKeyPair(SIGNING_KEY)
@@ -110,7 +144,7 @@ export async function startClient(displayName: string, userClusterId: string){
   
   const subcluster: ExtendedEventEmitter = await socket.subcluster({ sharedKey })
   
-  ;
+  
   subcluster.join();
   
   const client = new Client(displayName, peerId, socket, clusterId, signingKeys, sharedKey, [], subcluster);
@@ -118,4 +152,28 @@ export async function startClient(displayName: string, userClusterId: string){
   setupPeerMessages(client, subcluster);
 
   return client;
+}
+async function peerize(displayName: string, userClusterId: string, socket: any){
+  console.log("uh")
+  // const mySocket: Socket = createSocket('udp4');
+  const id = "34dfe76527d30553b8f346655a4c72f478b181709244bfe5395c389af3b70515";
+  
+  
+  const dgram = require('dgram');
+  console.log("--------------------------------")
+  
+  console.log(dgram.createSocket('udp4'));
+  const peer = new Peer({"peerId":id, clusterId: userClusterId}, 
+    dgram
+    
+  );
+  console.log("Peer created");
+  console.log(peer);
+  return peer;
+}
+
+export async function startClient(displayName: string, userClusterId: string){
+  const client = await clusterize(displayName, userClusterId);
+  const peer = await peerize(displayName, userClusterId, client.socket);
+  return client; 
 }

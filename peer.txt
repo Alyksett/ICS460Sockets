@@ -1,0 +1,31 @@
+FROM A #JOIN, THIS IS THE CONTENTS:
+
+
+const resolvedPeer = subcluster.peers.get(newPeerId);
+console.log("=============================================")
+console.log("Name: " + resolvedPeer.constructor.name);
+console.log("---------------------------------------------")
+console.log("All Properties: " + Object.getOwnPropertyNames(resolvedPeer));  
+console.log("---------------------------------------------")
+console.log("_peer Name: " + ((resolvedPeer._peer.constructor.name)));
+console.log("---------------------------------------------")
+console.log("_peer property names: " + JSON.stringify(Object.getOwnPropertyNames(resolvedPeer._peer)));
+console.log("---------------------------------------------")
+console.log("_peer prototype: " + JSON.stringify(Object.getPrototypeOf(resolvedPeer._peer)));
+console.log("---------------------------------------------")
+console.log("Prototype: " + JSON.stringify(Object.getPrototypeOf(resolvedPeer)));
+console.log("=============================================")
+
+[1] =============================================
+[1] Name: EventEmitter
+[1] ---------------------------------------------
+[1] All Properties: _events,_eventsCount,_contexts,_maxListeners,_on,_emit,peerId,address,port,emit,on,_peer
+[1] ---------------------------------------------
+[1] _peer Name: Object
+[1] ---------------------------------------------
+[1] _peer property names: ["address","clusters","connected","lastRequest","lastUpdate","natType","peerId","port"]
+[1] ---------------------------------------------
+[1] _peer prototype: {}
+[1] ---------------------------------------------
+[1] Prototype: {"_eventsCount":0}
+[1] =============================================
