@@ -1,31 +1,384 @@
-FROM A #JOIN, THIS IS THE CONTENTS:
-
-
-const resolvedPeer = subcluster.peers.get(newPeerId);
-console.log("=============================================")
-console.log("Name: " + resolvedPeer.constructor.name);
-console.log("---------------------------------------------")
-console.log("All Properties: " + Object.getOwnPropertyNames(resolvedPeer));  
-console.log("---------------------------------------------")
-console.log("_peer Name: " + ((resolvedPeer._peer.constructor.name)));
-console.log("---------------------------------------------")
-console.log("_peer property names: " + JSON.stringify(Object.getOwnPropertyNames(resolvedPeer._peer)));
-console.log("---------------------------------------------")
-console.log("_peer prototype: " + JSON.stringify(Object.getPrototypeOf(resolvedPeer._peer)));
-console.log("---------------------------------------------")
-console.log("Prototype: " + JSON.stringify(Object.getPrototypeOf(resolvedPeer)));
-console.log("=============================================")
-
-[1] =============================================
-[1] Name: EventEmitter
-[1] ---------------------------------------------
-[1] All Properties: _events,_eventsCount,_contexts,_maxListeners,_on,_emit,peerId,address,port,emit,on,_peer
-[1] ---------------------------------------------
-[1] _peer Name: Object
-[1] ---------------------------------------------
-[1] _peer property names: ["address","clusters","connected","lastRequest","lastUpdate","natType","peerId","port"]
-[1] ---------------------------------------------
-[1] _peer prototype: {}
-[1] ---------------------------------------------
-[1] Prototype: {"_eventsCount":0}
-[1] =============================================
+Peer {
+  port: null,
+  address: null,
+  natType: null,
+  nextNatType: 0,
+  clusters: {},
+  syncs: {},
+  reflectionId: null,
+  reflectionTimeout: null,
+  reflectionStage: 0,
+  reflectionRetry: 1,
+  reflectionFirstResponder: null,
+  peerId: '34dfe76527d30553b8f346655a4c72f478b181709244bfe5395c389af3b70515',
+  isListening: false,
+  ctime: 1744857093344,
+  lastUpdate: 0,
+  lastSync: 0,
+  closing: false,
+  clock: 0,
+  unpublished: {},
+  cache:
+    Cache {
+      data: Map(0) {},
+      maxSize: 6604,
+      siblingResolver: [Function: defaultSiblingResolver],
+      onEjected: [Function]
+    },
+  uptime: 0,
+  maxHops: 16,
+  bdpCache: [],
+    {
+  dgram:
+      ERR_SOCKET_ALREADY_BOUND: {},
+      ERR_SOCKET_BAD_BUFFER_SIZE: {},
+      ERR_SOCKET_BAD_PORT: {},
+      ERR_SOCKET_BAD_TYPE: {},
+      ERR_SOCKET_DGRAM_IS_CONNECTED: {},
+      ERR_SOCKET_BUFFER_SIZE: {},
+      ERR_SOCKET_DGRAM_NOT_CONNECTED: {},
+      ERR_SOCKET_DGRAM_NOT_RUNNING: {},
+      Socket: {},
+      SocketError: {},
+      createSocket: [Function: createSocket]
+    },
+  onListening: null,
+  onDelete: null,
+  sendQueue: [],
+  firewall: null,
+  rates: Map(0) {},
+  streamBuffer: Map(0) {},
+  gate: Map(0) {},
+  returnRoutes: Map(0) {},
+  metrics:
+    {
+      i: { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, DROPPED: 0 },
+      o: { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0 }
+    },
+  peers:
+    [
+      RemotePeer {
+        peerId: '4825fe0475c44bc0222e76c5fa7cf4759cd5ef8c66258c039653f06d329a9af5',
+        address: '44.213.42.133',
+        port: 10885,
+        natType: 31,
+        clusters: {},
+        distance: 0,
+        pingId: null,
+        connected: false,
+        opening: 0,
+        probed: 0,
+        proxy: null,
+        clock: 0,
+        uptime: 0,
+        lastUpdate: 0,
+        lastRequest: 0,
+        localPeer: [Circular],
+        indexed: true
+      },
+      RemotePeer {
+        peerId: '2de8ac51f820a5b9dc8a3d2c0f27ccc6e12a418c9674272a10daaa609eab0b41',
+        address: '107.20.123.15',
+        port: 31503,
+        natType: 31,
+        clusters: {},
+        pingId: null,
+        distance: 0,
+        connected: false,
+        opening: 0,
+        proxy: null,
+        probed: 0,
+        clock: 0,
+        uptime: 0,
+        lastUpdate: 0,
+        lastRequest: 0,
+        localPeer: [Circular],
+        indexed: true
+      },
+      RemotePeer {
+        peerId: '7aa3d21ceb527533489af3888ea6d73d26771f30419578e85fba197b15b3d18d',
+        address: '54.227.171.107',
+        port: 43883,
+        natType: 31,
+        clusters: {},
+        distance: 0,
+        pingId: null,
+        connected: false,
+        opening: 0,
+        probed: 0,
+        proxy: null,
+        clock: 0,
+        uptime: 0,
+        lastUpdate: 0,
+        lastRequest: 0,
+        localPeer: [Circular],
+        indexed: true
+      },
+      RemotePeer {
+        peerId: '1d2315f6f16e5f560b75fbfaf274cad28c12eb54bb921f32cf93087d926f05a9',
+        address: '54.157.134.116',
+        port: 34420,
+        natType: 31,
+        clusters: {},
+        pingId: null,
+        distance: 0,
+        connected: false,
+        opening: 0,
+        probed: 0,
+        proxy: null,
+        clock: 0,
+        lastUpdate: 0,
+        uptime: 0,
+        lastRequest: 0,
+        localPeer: [Circular],
+        indexed: true
+      },
+      RemotePeer {
+        peerId: 'db00d46e23d99befe42beb32da65ac3343a1579da32c3f6f89f707d5f71bb052',
+        address: '184.169.205.9',
+        port: 52489,
+        natType: 31,
+        clusters: {},
+        pingId: null,
+        distance: 0,
+        connected: false,
+        opening: 0,
+        probed: 0,
+        clock: 0,
+        uptime: 0,
+        proxy: null,
+        lastUpdate: 0,
+        lastRequest: 0,
+        localPeer: [Circular],
+        indexed: true
+      },
+      RemotePeer {
+        address: '35.158.123.13',
+        peerId: '4ba1d23266a2d2833a3275c1d6e6f7ce4b8657e2f1b8be11f6caf53d0955db88',
+        port: 31501,
+        natType: 31,
+        clusters: {},
+        pingId: null,
+        distance: 0,
+        connected: false,
+        opening: 0,
+        probed: 0,
+        proxy: null,
+        clock: 0,
+        uptime: 0,
+        lastUpdate: 0,
+        lastRequest: 0,
+        localPeer: [Circular],
+        indexed: true
+      },
+      RemotePeer {
+        peerId: '448b083bd8a495ce684d5837359ce69d0ff8a5a844efe18583ab000c99d3a0ff',
+        address: '3.68.89.3',
+        port: 22787,
+        natType: 31,
+        clusters: {},
+        pingId: null,
+        distance: 0,
+        connected: false,
+        opening: 0,
+        probed: 0,
+        proxy: null,
+        clock: 0,
+        uptime: 0,
+        lastUpdate: 0,
+        lastRequest: 0,
+        localPeer: [Circular],
+        indexed: true
+      },
+      RemotePeer {
+        peerId: '07bffa90d89bf74e06ff7f83938b90acb1a1c5ce718d1f07854c48c6c12cee49',
+        address: '3.76.100.161',
+        port: 25761,
+        natType: 31,
+        clusters: {},
+        distance: 0,
+        pingId: null,
+        connected: false,
+        opening: 0,
+        probed: 0,
+        proxy: null,
+        clock: 0,
+        uptime: 0,
+        lastRequest: 0,
+        lastUpdate: 0,
+        localPeer: [Circular],
+        indexed: true
+      },
+      RemotePeer {
+        peerId: '1d7ee8d965794ee286ac425d060bab27698a1de92986dc6f4028300895c6aa5c',
+        address: '3.70.241.230',
+        port: 61926,
+        natType: 31,
+        clusters: {},
+        pingId: null,
+        distance: 0,
+        connected: false,
+        opening: 0,
+        probed: 0,
+        proxy: null,
+        clock: 0,
+        uptime: 0,
+        lastUpdate: 0,
+        lastRequest: 0,
+        localPeer: [Circular],
+        indexed: true
+      },
+      RemotePeer {
+        peerId: '707c07171ac9371b2f1de23e78dad15d29b56d47abed5e5a187944ed55fc8483',
+        port: 41141,
+        natType: 31,
+        address: '3.70.160.181',
+        clusters: {},
+        pingId: null,
+        distance: 0,
+        opening: 0,
+        connected: false,
+        probed: 0,
+        proxy: null,
+        clock: 0,
+        uptime: 0,
+        lastUpdate: 0,
+        lastRequest: 0,
+        localPeer: [Circular],
+        indexed: true
+      },
+      RemotePeer {
+        peerId: 'a830615090d5cdc3698559764e853965a0d27baad0e3757568e6c7362bc6a12a',
+        address: '3.122.250.236',
+        port: 64236,
+        clusters: {},
+        natType: 31,
+        pingId: null,
+        distance: 0,
+        connected: false,
+        opening: 0,
+        probed: 0,
+        proxy: null,
+        clock: 0,
+        uptime: 0,
+        lastUpdate: 0,
+        lastRequest: 0,
+        localPeer: [Circular],
+        indexed: true
+      },
+      RemotePeer {
+        peerId: 'ba483c1477ab7a99de2d9b60358d9641ff6a6dc6ef4e3d3e1fc069b19ac89da4',
+        address: '18.130.98.23',
+        port: 25111,
+        clusters: {},
+        natType: 31,
+        pingId: null,
+        distance: 0,
+        connected: false,
+        opening: 0,
+        probed: 0,
+        proxy: null,
+        clock: 0,
+        uptime: 0,
+        lastUpdate: 0,
+        lastRequest: 0,
+        localPeer: [Circular],
+        indexed: true
+      },
+      RemotePeer {
+        peerId: '032b79de5b4581ee39c6d15b12908171229a8eb1017cf68fd356af6bbbc21892',
+        address: '13.42.10.247',
+        port: 2807,
+        natType: 31,
+        clusters: {},
+        pingId: null,
+        distance: 0,
+        connected: false,
+        opening: 0,
+        probed: 0,
+        proxy: null,
+        clock: 0,
+        uptime: 0,
+        lastUpdate: 0,
+        lastRequest: 0,
+        localPeer: [Circular],
+        indexed: true
+      },
+      RemotePeer {
+        peerId: '73d726c04c05fb3a8a5382e7a4d7af41b4e1661aadf9020545f23781fefe3527',
+        address: '18.229.140.216',
+        port: 36056,
+        natType: 31,
+        clusters: {},
+        pingId: null,
+        distance: 0,
+        connected: false,
+        opening: 0,
+        probed: 0,
+        proxy: null,
+        clock: 0,
+        uptime: 0,
+        lastUpdate: 0,
+        lastRequest: 0,
+        localPeer: [Circular],
+        indexed: true
+      }
+  encryption: Encryption { keys: {} },
+    ],
+  config:
+    {
+      keepalive: 30000,
+      peerId: '34dfe76527d30553b8f346655a4c72f478b181709244bfe5395c389af3b70515',
+      clusterId: 's'
+    },
+  _onError: [Function],
+  clusterId: 's',
+  socket:
+    Socket {
+      _events: [Object: null prototype] { close: [Object], error: [Function] },
+      _eventsCount: 2,
+        Map(2) {
+          function onceWrapper() {\n    [native code]\n} => Snapshot {},
+          err => isRecoverable(err) && this._listen() => Snapshot {}
+        },
+      _maxListeners: undefined,
+      _contexts:
+      id: 16580080204481002325n,
+      knownIdWasGivenInSocketConstruction: false,
+      type: 'udp4',
+      signal: null,
+      state:
+        {
+          recvBufferSize: undefined,
+          sendBufferSize: undefined,
+          bindState: 0,
+          connectState: 0,
+          reuseAddr: false,
+          ipv6Only: false
+    },
+        }
+  probeSocket:
+    Socket {
+      _eventsCount: 2,
+      _events: [Object: null prototype] { close: [Object], error: [Function] },
+      _contexts:
+        Map(2) {
+          function onceWrapper() {\n    [native code]\n} => Snapshot {},
+          err => isRecoverable(err) && this._listen() => Snapshot {}
+        },
+      _maxListeners: undefined,
+      id: 11248323839194743636n,
+      knownIdWasGivenInSocketConstruction: false,
+      type: 'udp4',
+      signal: null,
+      state:
+        {
+          recvBufferSize: undefined,
+          sendBufferSize: undefined,
+          bindState: 0,
+          connectState: 0,
+          reuseAddr: false,
+          ipv6Only: false
+        }
+    }
+}

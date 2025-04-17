@@ -36,7 +36,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   });
 });
 
-function getDirectMessageUser(client: Client){
+function getDirectMessageUser(client: Client): User | null{
   const selectElement = document.getElementById('directMessageSelect') as HTMLSelectElement ;
   if(!selectElement){
     console.error("Select element not found");
@@ -44,9 +44,14 @@ function getDirectMessageUser(client: Client){
   }	
   const selectedOption = selectElement.options[selectElement.selectedIndex];
   let recipient = null;
-  for(const u of client.getPeers()){
-    if(u.displayName === selectedOption.textContent){
-      recipient = u
+  for(const remotePeer of client.getPeers()){
+    const resolvedUser: User | null = client.getUserById(remotePeer.peerId);
+    if(!resolvedUser){
+      console.error("Couldn't find user with id: " + remotePeer.peerId);
+      continue;
+    }
+    if(resolvedUser.displayName === selectedOption.textContent){
+      recipient = resolvedUser
     }
   }
   if(!recipient){
@@ -86,7 +91,6 @@ function handleLogout(client: Client){
 }
 
 function sendMessage(client: Client) {
-  const users: User[] = client.getPeers();
   const inputElement = document.getElementById("messageInput") as HTMLInputElement;
   let inputValue = "";
   if (inputElement) {
@@ -174,8 +178,8 @@ function toggleDirectMessageSelect(client: Client){
 }
 
 function getDirectMessageOptions(client: Client): string[]{
-  const peers = client.getPeers();
-  const peerNames = peers.map((p: User) => p.displayName);
+  const users = client.users;
+  const peerNames = users.map((u: User) => u.displayName);
   if(peerNames.length === 0){
     peerNames.push("No users online");
   }

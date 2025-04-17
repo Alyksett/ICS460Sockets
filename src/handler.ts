@@ -5,8 +5,8 @@ import { Message } from './types.js';
 import { addMessageToChat } from './index.js';
 import { PEER_ID, SIGNING_KEY, CLUSTER_ID, SHARED_KEY } from './values.js';
 import type EventEmitter from 'socket:events';
-import { setupPeerMessages, listenerKeys, _handleMessage } from './utils.js';
-import { Peer } from 'socket:latica/index'
+import { setupPeerMessages, listenerKeys, _handleMessage, pid } from './utils.js';
+import { Peer, RemotePeer } from 'socket:latica/index'
 import { rand64 } from 'socket:crypto';
 
 // import { createSocket, Socket } from 'dgram';
@@ -18,14 +18,18 @@ import { rand64 } from 'socket:crypto';
 // peer.publish("test", {message: Buffer.from("test")})
 export class User{
   displayName: string;
-  peer: any;
-  constructor(displayName: string, peer: Peer){
+  peer: RemotePeer;
+  constructor(displayName: string, peer: RemotePeer){
     this.displayName = displayName;
     this.peer = peer;
   }
-  sendMessage(){
-    console.log("Sending message to " + this.displayName);
+  public getId(): string{
+    return this.peer.peerId;
   }
+  public setName(name: string){
+    this.displayName = name;
+  }
+
 }
 
 type ExtendedEventEmitter = EventEmitter & {
@@ -37,20 +41,21 @@ export class Client{
   peerId: any;
   socket: ExtendedEventEmitter;
   clusterId: any;
-  signingKeys: any;
-  sharedKey: any;
-  users: User[] = [];
   subcluster: ExtendedEventEmitter;
+  peer: Peer;
+  users: User[] = [];
 
-  constructor(displayName: string, peerId: any, socket: any, clusterId: any, signingKeys: any, sharedKey: any, users: User[], subcluster: any){
+  constructor(displayName: string, peerId: any, socket: any, clusterId: any, users: User[], subcluster: any, peer: Peer){
     this.displayName = displayName;
     this.peerId = peerId;
     this.socket = socket;
     this.clusterId = clusterId;
-    this.signingKeys = signingKeys;
-    this.sharedKey = sharedKey;
-    this.users = users;
     this.subcluster = subcluster;
+    this.peer = peer;
+    for(const p of this.peer.peers){
+      const newUser = new User("", p);
+      this.users.push(newUser);
+    }
   }
 
   public handleShutdown(){
@@ -59,52 +64,75 @@ export class Client{
     this.subcluster.emit("logout", payload);
     // This handles cutting off the listeners so we can't receive messages (But it doesn't really work...)
     for(const key of listenerKeys){
-      console.log("Removing listener for " + key);
       this.subcluster.removeAllListeners(key);
       this.socket.removeAllListeners(key);
     }
-
+    this.peer.peers = [];
+    this.users = [];
     console.log("subcluster listenerCount: " + this.subcluster.listenerCount("message"));
     console.log("subcluster listener for message: " + this.subcluster.listeners("message"));
-    
+    this.peer.disconnect();
+    this.peer.close();
     this.socket.close();
   }
   
-  private getPeerById(peerId: string): User | null {2
-    return this.users.find(user => user.peer.peerId === peerId) || null;
+  public getUserById(peerId: string): User | null {
+    for(const u of this.users){
+      if(u.getId() === peerId){
+        return u;
+      }
+    }
+    console.log("Couldn't find peer with id: " + peerId);
+    return null;
   }
 
-  public removePeer(peerId: string){
-    
-    const user: User | null = this.getPeerById(peerId);
-    if(!user){
-      console.error("Couldn't find user with id: " + peerId);
-      return null;
-    }    
-    this.users = this.users.filter(u => u.peer.peerId !== peerId);
-
-    return user.displayName;
+  public removePeer(peerId: string): string | null{
+    let removedPeerName: string | null = null;
+    // TODO: Does this work...?
+    for(const p of this.peer.peers){
+      if(p.peerId === peerId){
+        this.peer.peers.splice(this.peer.peers.indexOf(p), 1);
+        break;
+      }
+    }
+    // Right now we have two arrays to keep track of peers for.
+    // this is just for resolving names but we can skip alll that by encrypting their name
+    // for their peerId, and decrypting it.
+    for(const u of this.users){
+      if(u.getId() === peerId){
+        removedPeerName = u.displayName;
+        this.users.splice(this.users.indexOf(u), 1);
+        console.log("Removed peer with id: " + peerId);
+      }
+    }
+    return removedPeerName;
   }
-  public getPeers(){
-    return this.users;
+
+  public getPeers(): RemotePeer[] {
+    return this.peer.peers;
   }
 
   public sendDirectMessage(message: any, recipient: User){
-    const packagedMessage = JSON.stringify({ message: message, peer: this.peerId, author: this.displayName });
+    const packagedMessage = Buffer.from(JSON.stringify({ message: message, peer: this.peerId, author: this.displayName }));
     const recipientId = recipient.peer.peerId;
-    const peer = recipient.peer._peer;
-    const buf = Buffer.from(packagedMessage);
-    
-    // console.log("=============================================")
-    // console.log("Name: " + peer.constructor.name);
-    // console.log("---------------------------------------------")
-    // console.log("Properties: " + Object.keys(peer));
-    // console.log("---------------------------------------------")
-    // console.log("All Properties: " + Object.getOwnPropertyNames(peer));
-    // console.log("---------------------------------------------")
-    // console.log("Prototype: " + JSON.stringify(Object.getPrototypeOf(peer), null, 2));
-    // console.log("=============================================")
-    recipient.peer.send(buf, peer.port, peer.address );
+    const recipientUser: User | null = this.getUserById(recipientId);
+    if(!recipientUser){
+      console.error("Couldn't find peer with id: " + recipientId);
+      return;
+    }
+    const recipientPeer: RemotePeer | null = this.peer.getPeer(recipientId);
+    if(!recipientPeer){
+      console.error("Couldn't find peer with id: " + recipientId);
+      return;
+    }
+    const addr: string | null = recipientPeer.address;
+    const port: number | null = recipientPeer.port;
+    if(!addr || !port){
+      console.error("Couldn't find address or port for peer with id: " + recipientId + "\nPort: " + port + "\nAddr: " + addr);
+      return;
+    }
+    console.log(`Sending message to ${pid(recipientId)} at ${addr}:${port}`);
+    this.peer.send(packagedMessage, port, addr);
   }
 
   public sendMessage(message: any){
@@ -131,7 +159,7 @@ export class Client{
     this.subcluster.emit("stoppedTyping", payload);
   }
 }
-async function clusterize(displayName: string, userClusterId: string){
+async function clusterize(displayName: string, userClusterId: string, peer: Peer){
   console.log("Starting cluster client...");
   
   const peerId = await Encryption.createId(PEER_ID)
@@ -147,33 +175,22 @@ async function clusterize(displayName: string, userClusterId: string){
   
   subcluster.join();
   
-  const client = new Client(displayName, peerId, socket, clusterId, signingKeys, sharedKey, [], subcluster);
+  const client = new Client(displayName, peerId, socket, clusterId, [], subcluster, peer);
   
   setupPeerMessages(client, subcluster);
 
   return client;
 }
-async function peerize(displayName: string, userClusterId: string, socket: any){
-  console.log("uh")
-  // const mySocket: Socket = createSocket('udp4');
+async function peerize(displayName: string, userClusterId: string){
+  // TODO: Get real key- hash userId?
   const id = "34dfe76527d30553b8f346655a4c72f478b181709244bfe5395c389af3b70515";
-  
-  
   const dgram = require('dgram');
-  console.log("--------------------------------")
-  
-  console.log(dgram.createSocket('udp4'));
-  const peer = new Peer({"peerId":id, clusterId: userClusterId}, 
-    dgram
-    
-  );
-  console.log("Peer created");
-  console.log(peer);
+  const peer = new Peer({"peerId":id, clusterId: userClusterId}, dgram);
   return peer;
 }
 
 export async function startClient(displayName: string, userClusterId: string){
-  const client = await clusterize(displayName, userClusterId);
-  const peer = await peerize(displayName, userClusterId, client.socket);
+  const peer = await peerize(displayName, userClusterId);
+  const client = await clusterize(displayName, userClusterId, peer);
   return client; 
 }

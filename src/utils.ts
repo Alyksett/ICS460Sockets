@@ -1,7 +1,8 @@
+import type { RemotePeer } from 'socket:latica';
 import { Client, User } from './handler.js';
 import { addMessageToChat } from './index.js';
 
-function pid(peerId: string){
+export function pid(peerId: string){
   return peerId.substring(0, 8);
 }
 // do something better than this
@@ -125,13 +126,13 @@ function _resolveName(client: Client, subcluster: any, peerMessage: any){
   const json = JSON.parse(peerMessage);
   const peerName = json.displayName;
   const peerId = json.peerId
-  const resolvedPeer = subcluster.peers.get(peerId);
-  if(!resolvedPeer){
+  const resolvedUser: User | null = client.getUserById(peerId)
+  if(!resolvedUser){
     console.error(`Peer with id: ${pid(peerId)} not found in subcluster`);
     return;
   }
-  const newUser = new User(peerName, resolvedPeer);
-  client.users.push(newUser);
+  resolvedUser.setName(peerName);
+  
   addMessageToChat(`${peerName} has joined the chat.`);
 }
 
