@@ -86,6 +86,7 @@ function sendMessage(client: Client) {
     inputElement.innerText = "";  // Clear the input field
     console.log("Sent message");
   }
+  inputElement.value = "";  // Clear the input field
 }
 
 export function addMessageToChat(message: string, directMessage: boolean = false) {
