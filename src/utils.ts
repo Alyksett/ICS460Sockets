@@ -1,6 +1,8 @@
-import type { RemotePeer } from 'socket:latica';
+// import { Packet, type RemotePeer } from 'socket:latica';
 import { Client, User } from './handler.js';
 import { addMessageToChat } from './index.js';
+import Buffer from 'socket:buffer';
+import { PEER_ID_MASK } from './values.js';
 
 export function pid(peerId: string){
   return peerId.substring(0, 8);
@@ -28,19 +30,13 @@ export function setupPeerMessages(client: Client, subcluster: any){
     _handleDirectMessageSocket(client, subcluster, message);
   });
 
-  subcluster.on("#join", (newPeer: any) => {    
-    _handleJoin(client, subcluster, newPeer);
+  subcluster.on("#join", async (newPeer: any) => {
+    await _handleJoin(client, subcluster, newPeer);
   });
   subcluster.on("logout", (peer: any) => {
-    // _handleLeave(client, subcluster, peer);
     _handleLeave(client, subcluster, peer);
   });
-  // subcluster.on("typing", (peer: any) => {
-  //   _handleTyping(client, subcluster, peer);
-  // });
-  // subcluster.on("typing", (peer: any) => {
-  //   _handleTyping(client, subcluster, peer);
-  // });
+
 }
 
 
@@ -58,7 +54,7 @@ function _handleDirectMessage(client: Client, subcluster: any, message: any){
   addMessageToChat(finalMessage, true);
 }
 function _handleDirectMessageSocket(client: Client, subcluster: any, message: any){
-  console.log("Handling direct message SOCKET!!!!!!!!!!!!!");
+  console.log("==================Handling directMessageSocket================");
   const parsedMessage = JSON.parse(message.toString());
   const messageContent = parsedMessage.message;
   const messagePeer = parsedMessage.peer;
@@ -72,6 +68,7 @@ function _handleDirectMessageSocket(client: Client, subcluster: any, message: an
 }
 
 export function _handleMessage(client: Client, subcluster: any, message: any){
+  console.log("==================Handling message================");
   const parsedMessage = JSON.parse(message.toString());
   const messageContent = parsedMessage.message;
   const messagePeer = parsedMessage.peer;
@@ -84,35 +81,22 @@ export function _handleMessage(client: Client, subcluster: any, message: any){
   addMessageToChat(finalMessage);
 }
 
-function _handleJoin(client: Client, subcluster: any, newPeer: any){
+async function _handleJoin(client: Client, subcluster: any, newPeer: any){
+  
   const newPeerId = newPeer.peerId;
-  if(newPeerId === client.peerId){
-    console.log("Self join detected. Ignoring.");
+  if(PEER_ID_MASK.includes(newPeerId)){
     return;
   }
-  const resolvedPeer = subcluster.peers.get(newPeerId);
-  // console.log("=============================================")
-  // console.log("Name: " + resolvedPeer.constructor.name);
-  // console.log("---------------------------------------------")
-  // console.log("All Properties: " + Object.getOwnPropertyNames(resolvedPeer));  
-  // console.log("---------------------------------------------")
-  // console.log("_peer Name: " + ((resolvedPeer._peer.constructor.name)));
-  // console.log("---------------------------------------------")
-  // console.log("_peer property names: " + JSON.stringify(Object.getOwnPropertyNames(resolvedPeer._peer)));
-  // console.log("---------------------------------------------")
-  // console.log("_peer prototype: " + JSON.stringify(Object.getPrototypeOf(resolvedPeer._peer)));
-  // console.log("---------------------------------------------")
-  // console.log("Prototype: " + JSON.stringify(Object.getPrototypeOf(resolvedPeer)));
-  // console.log("=============================================")
-  if(resolvedPeer){
-    console.log("Found peer that just joined: " + resolvedPeer.peerId);
-    resolvedPeer.emit("requestName", { peerId: client.peerId });
-  }else{
-    console.error("Peer not found in subcluster: " + pid(newPeerId));
-  }
+  console.log("==================Handling join================");
+  const msg = JSON.stringify("requestName");
+  const buf = Buffer.from(msg);
+  
+  client.peer.send(buf, newPeer._peer.port, newPeer._peer.address);
+  console.log("Sent requestName to new peer: " + pid(newPeerId));
 }
 
 function _requestName(client: Client, subcluster: any, requesterMessage: any){
+  console.log("==================Handling requestName================");
   const json = JSON.parse(requesterMessage);
   const requesterId = json.peerId;
   if(requesterId === client.peerId){
@@ -123,6 +107,7 @@ function _requestName(client: Client, subcluster: any, requesterMessage: any){
 }
 
 function _resolveName(client: Client, subcluster: any, peerMessage: any){
+  console.log("==================Handling resolveName================");
   const json = JSON.parse(peerMessage);
   const peerName = json.displayName;
   const peerId = json.peerId
@@ -141,7 +126,7 @@ function _resolveName(client: Client, subcluster: any, peerMessage: any){
 When we have received a leave event
 */
 function _handleLeave(client: Client, subcluster: any, peer: any){
-  console.log("Handling leave");
+  console.log("==================Handling leave================");
   const payload = JSON.parse(peer);
   const leftPeerName: string | null = client.removePeer(payload.peerId);
   if(!leftPeerName){

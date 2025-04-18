@@ -1,6 +1,8 @@
 import { Client, startClient, User } from './handler.js'
+import { pid } from './utils.js';
 
 document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
+  console.log("Login form submitted");
   event.preventDefault();
   const displayName = (document.getElementById('displayName') as HTMLInputElement).value;
   const clusterId = (document.getElementById('clusterId') as HTMLInputElement).value;
@@ -21,19 +23,13 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   (window as any).sendMessage = () => sendMessage(client);
   (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
   (window as any).handleLogout = () => handleLogout(client);
+  // (window as any).utilityButton = () => utilityButton(client);
   console.log("Client initialized");
   
-  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}`;
+  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${pid(client.peerId)}`;
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
-  const messageInput = document.getElementById('messageInput') as HTMLInputElement;
-  messageInput?.addEventListener('input', () => {
-    if (messageInput.value.trim() === '') {
-      isTyping(client);
-    } else {
-      stoppedTyping(client);
-    }
-  });
+
 });
 
 function getDirectMessageUser(client: Client): User | null{
@@ -60,34 +56,17 @@ function getDirectMessageUser(client: Client): User | null{
   return recipient;
 }
 
-function isTyping(client: Client){
-  const isDirectMessage = (document.getElementById('sendMessageType') as HTMLSelectElement).value === "Direct Message";
-  if(isDirectMessage){
-    const recipient = getDirectMessageUser(client);
-    if(recipient){
-      // client.sendTypingDirect("is typing...", recipient);
-    }
-  }else{
-    client.sendTyping("is typing...");1
-  }
+function utilityButton(client: Client){
+  client.utility();
+  // TODO: REMOVE THIS
+  // (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
+  // (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
-
-function stoppedTyping(client: Client){
-  const isDirectMessage = (document.getElementById('sendMessageType') as HTMLSelectElement).value === "Direct Message";
-  if(isDirectMessage){
-    const recipient = getDirectMessageUser(client);
-    if(recipient){
-      client.stoppedTypingDirect("stopped typing...", recipient);
-    }
-  }else{
-    client.stoppedTyping("stopped typing...");
-  }
-}
-
 function handleLogout(client: Client){
   client.handleShutdown();
-  (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
-  (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
+  // TODO: REMOVE THIS
+  // (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
+  // (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
 
 function sendMessage(client: Client) {
@@ -147,8 +126,6 @@ export function addMessageToChat(message: string, directMessage: boolean = false
 function toggleDirectMessageSelect(client: Client){
   console.log("Toggling direct message select");
   
-  const peers = client.getPeers();
-
   const messageTypeElement = document.getElementById('sendMessageType') as HTMLSelectElement;
   if(!messageTypeElement){
     console.error("Message type element not found");

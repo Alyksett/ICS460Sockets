@@ -1,13 +1,13 @@
-import { network, Encryption } from 'socket:network'
+import { network, Encryption, Packet } from 'socket:network'
 // import { Peer } from 'socket:latica/index';
 import Buffer from 'socket:buffer';
-import { Message } from './types.js';
-import { addMessageToChat } from './index.js';
-import { PEER_ID, SIGNING_KEY, CLUSTER_ID, SHARED_KEY } from './values.js';
+// import { Message } from './types.js';
+// import { addMessageToChat } from './index.js';
+import { PEER_ID, SIGNING_KEY, CLUSTER_ID, SHARED_KEY, PEER_ID_MASK } from './values.js';
 import type EventEmitter from 'socket:events';
 import { setupPeerMessages, listenerKeys, _handleMessage, pid } from './utils.js';
 import { Peer, RemotePeer } from 'socket:latica/index'
-import { rand64 } from 'socket:crypto';
+// import { rand64 } from 'socket:crypto';
 
 // import { createSocket, Socket } from 'dgram';
 
@@ -54,35 +54,51 @@ export class Client{
     this.peer = peer;
     for(const p of this.peer.peers){
       const newUser = new User("", p);
+      if(PEER_ID_MASK.includes(p.peerId) || this.peerId === p.peerId) continue;
       this.users.push(newUser);
     }
+    
+    // console.log(this.peer.peers);
+    // console.log("Client Created with users (Abbr):")
+    // console.log(this.users.map((u: User) => u.peer.peerId));
+  }
+
+  
+  public utility(){
+    console.log("===============================================");
+    console.log("My Peer ID: " + pid(this.peerId));
+    const safePeers = this.peer.peers.filter((p: RemotePeer) => !PEER_ID_MASK.includes(p.peerId));
+    console.log("Safe Peers: " + JSON.stringify(safePeers.map((p: RemotePeer) => p.peerId), null, 2));
+    console.log("===============================================");
+
   }
 
   public handleShutdown(){
-    console.log("Shutting down client...");
-    const payload = JSON.stringify({"peerId": this.peerId});
-    this.subcluster.emit("logout", payload);
-    // This handles cutting off the listeners so we can't receive messages (But it doesn't really work...)
-    for(const key of listenerKeys){
-      this.subcluster.removeAllListeners(key);
-      this.socket.removeAllListeners(key);
-    }
-    this.peer.peers = [];
-    this.users = [];
-    console.log("subcluster listenerCount: " + this.subcluster.listenerCount("message"));
-    console.log("subcluster listener for message: " + this.subcluster.listeners("message"));
-    this.peer.disconnect();
-    this.peer.close();
-    this.socket.close();
+    // PEER_MASK.push(this.peerId);
+    // console.log("==================================")
+    // console.log("My id: " + this.peerId);
+    // const peers = this.peer.peers;
+    // let peerIds = peers.map((p: RemotePeer) => p.peerId);
+    // const final = peerIds.filter((id: string) => !PEER_MASK.includes(id));
+    // console.log("Peer IDs: " + JSON.stringify(final, null, 2));
+    // console.log("==================================")
+    this.subcluster.emit("logout", JSON.stringify({ peerId: this.peerId }));
+    // this.peer.close();
   }
   
   public getUserById(peerId: string): User | null {
+    PEER_ID_MASK.push(this.peerId);
+    
     for(const u of this.users){
+      // ignore peers that are stuck in the cluster
+      if(PEER_ID_MASK.includes(u.getId())){
+        continue;
+      }
       if(u.getId() === peerId){
         return u;
       }
     }
-    console.log("Couldn't find peer with id: " + peerId);
+    console.log("client.getUserById: Couldn't find peer with id " + pid(peerId));
     return null;
   }
 
@@ -133,40 +149,23 @@ export class Client{
     }
     console.log(`Sending message to ${pid(recipientId)} at ${addr}:${port}`);
     this.peer.send(packagedMessage, port, addr);
+    
   }
 
   public sendMessage(message: any){
     const buf = Buffer.from(JSON.stringify({ message: message, peer: this.peerId, author: this.displayName }));
     this.subcluster.emit("message", buf);
-  }
 
-  public sendTypingDirect(user: User){
-    const recipientId = user.peer.peerId;
-    const payload = JSON.stringify({ peerId: this.peerId, message: "typing..." });
-    this.subcluster.emit("typing", payload);
-  }
-  public stoppedTypingDirect(message: string, recipient: User){
-    const recipientId = recipient.peer.peerId;
-    const payload = JSON.stringify({ peerId: this.peerId, message: message });
-    this.subcluster.emit("stoppedTyping", payload);
-  }
-  public sendTyping(message: string){
-    const payload = JSON.stringify({ peerId: this.peerId, message: message });
-    this.subcluster.emit("typing", payload);
-  }
-  public stoppedTyping(message: string){
-    const payload = JSON.stringify({ peerId: this.peerId, message: message });
-    this.subcluster.emit("stoppedTyping", payload);
   }
 }
 async function clusterize(displayName: string, userClusterId: string, peer: Peer){
   console.log("Starting cluster client...");
   
-  const peerId = await Encryption.createId(PEER_ID)
+  const peerId = await Encryption.createId(peer.peerId)
   const signingKeys = await Encryption.createKeyPair(SIGNING_KEY)
 
   const clusterId = await Encryption.createClusterId(userClusterId)
-  const sharedKey = await Encryption.createSharedKey(SHARED_KEY)
+  const sharedKey = await Encryption.createSharedKey(CLUSTER_ID)
 
   const socket = await network({ peerId, clusterId, signingKeys })
   
@@ -181,16 +180,36 @@ async function clusterize(displayName: string, userClusterId: string, peer: Peer
 
   return client;
 }
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 async function peerize(displayName: string, userClusterId: string){
-  // TODO: Get real key- hash userId?
-  const id = "34dfe76527d30553b8f346655a4c72f478b181709244bfe5395c389af3b70515";
+  const id = await Encryption.createId(displayName);
   const dgram = require('dgram');
-  const peer = new Peer({"peerId":id, clusterId: userClusterId}, dgram);
+  
+  // TODO: Undo this string
+  const peer = new Peer({"peerId":id, clusterId: userClusterId}, dgram)
+  
+  peer.init( () => {console.log("Peer is initialized")})
+  
+  peer.join(userClusterId);
+  peer.socket.on("requestName", (message: any) => {console.log("YESYESYSEYESYSEYE HOLY FUUUUUCKKKKKKK")});
+  peer.socket.on("#send", (message: any) => {console.log("YESYESYSEYESYSEYE HOLY FUUUUUCKKKKKKK")});
   return peer;
 }
 
 export async function startClient(displayName: string, userClusterId: string){
   const peer = await peerize(displayName, userClusterId);
   const client = await clusterize(displayName, userClusterId, peer);
+  // const client = new Client(displayName, peer.peerId, peer.socket, userClusterId, [], peer.socket, peer);
   return client; 
 }
+
+
+
+    /*
+    Final topics:
+      - routing protocols, bgp etc, how routing works.
+      - wireless, link layer. CSMA, CD vs collision avoidancy, differences between them
+      - some security.
+    */
