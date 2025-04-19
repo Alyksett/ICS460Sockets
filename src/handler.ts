@@ -1,23 +1,10 @@
-import { network, Encryption, Packet } from 'socket:network'
-// import { Peer } from 'socket:latica/index';
+import { network, Encryption } from 'socket:network'
 import Buffer from 'socket:buffer';
-// import { Message } from './types.js';
-// import { addMessageToChat } from './index.js';
-import { PEER_ID, SIGNING_KEY, CLUSTER_ID, SHARED_KEY, PEER_ID_MASK } from './values.js';
+import { SIGNING_KEY, CLUSTER_ID, PEER_ID_MASK } from './values.js';
 import type EventEmitter from 'socket:events';
-import { setupPeerMessages, listenerKeys, _handleMessage, pid, packetQuery } from './utils.js';
+import { setupPeerMessages, _handleMessage, pid, packetQuery } from './utils.js';
 import { Peer, RemotePeer } from 'socket:latica/index'
-import type { Socket } from 'socket:dgram';
-import { PacketPong } from 'socket:latica/packets';
-// import { rand64 } from 'socket:crypto';
 
-// import { createSocket, Socket } from 'dgram';
-
-// import * as dgram from 'dgram';
-
-
-
-// peer.publish("test", {message: Buffer.from("test")})
 export class User{
   displayName: string;
   peer: RemotePeer;
@@ -76,16 +63,7 @@ export class Client{
   }
 
   public handleShutdown(){
-    // PEER_MASK.push(this.peerId);
-    // console.log("==================================")
-    // console.log("My id: " + this.peerId);
-    // const peers = this.peer.peers;
-    // let peerIds = peers.map((p: RemotePeer) => p.peerId);
-    // const final = peerIds.filter((id: string) => !PEER_MASK.includes(id));
-    // console.log("Peer IDs: " + JSON.stringify(final, null, 2));
-    // console.log("==================================")
     this.subcluster.emit("logout", JSON.stringify({ peerId: this.peerId }));
-    // this.peer.close();
   }
   
   public getUserById(peerId: string): User | null {
@@ -182,15 +160,12 @@ async function clusterize(displayName: string, userClusterId: string, peer: Peer
 
   return client;
 }
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+
 async function peerize(displayName: string, userClusterId: string){
   const id = await Encryption.createId(displayName);
   const clusterId = await Encryption.createClusterId(userClusterId)
 
   const dgram = require('dgram');
-
   const peer = new Peer({"peerId":id, clusterId: clusterId}, dgram)
   
   await peer.init(() => {console.log("Peer is initialized")})
@@ -209,6 +184,7 @@ async function peerize(displayName: string, userClusterId: string){
   (peer as any).onQuery = async (packet: any ) => {
     const json = packet.message
     const operation = json.operation
+    // when we receive a query packet, match the operation with ones we expect
     switch (operation){
       case "getName": await _recGetName();break;
       case "sendName": await _recSendName(json);break;
@@ -228,11 +204,9 @@ export async function startClient(displayName: string, userClusterId: string){
   return client; 
 }
 
-
-
-    /*
-    Final topics:
-      - routing protocols, bgp etc, how routing works.
-      - wireless, link layer. CSMA, CD vs collision avoidancy, differences between them
-      - some security.
-    */
+/*
+Final topics:
+  - routing protocols, bgp etc, how routing works.
+  - wireless, link layer. CSMA, CD vs collision avoidancy, differences between them
+  - some security.
+*/

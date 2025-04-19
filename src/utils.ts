@@ -1,14 +1,9 @@
-// import { Packet, type RemotePeer } from 'socket:latica';
 import { Client, User } from './handler.js';
 import { addMessageToChat } from './index.js';
 import Buffer from 'socket:buffer';
-import { PEER_ID_MASK } from './values.js';
 import { Packet } from 'socket:network';
-import { PacketJoin, PacketQuery } from 'socket:latica/packets';
+import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
-import { Peer, RemotePeer } from 'socket:latica/index';
-import { lchown } from 'socket:fs';
-import { toBuffer } from 'socket:util';
 
 export async function packetQuery(query: any){
   const packet = new PacketQuery({
@@ -17,11 +12,11 @@ export async function packetQuery(query: any){
     usr3: Buffer.from(randomBytes(32)),
     usr4: Buffer.from(String(1))
   })
-  const data = await Packet.encode(packet)
+  // Not sure why we're encoding and decoding, but they do this in the source
+  // code so we're going with it.
 
-  const p = Packet.decode(data) // finalize a packet
-  // console.log("Constructed packet: " + JSON.stringify(final));
-  // return JSON.stringify(p)
+  const data = await Packet.encode(packet)
+  const p = Packet.decode(data)
 
   return p
 }
@@ -107,6 +102,8 @@ function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 async function _handleJoin(client: Client, subcluster: any, newPeer: any){
+  // in theory (and ideally) we'd use these message the peer themselves, but right now we're 
+  // just sending a PacketQuery to the network... 
   const newPeerId = newPeer.peerId;
   const newPeerPort = newPeer._peer.port;
   const newPeerAddress = newPeer._peer.address;
@@ -114,7 +111,6 @@ async function _handleJoin(client: Client, subcluster: any, newPeer: any){
   const message = {"operation":"getName", "address":client.peer.address, "port":client.peer.port, "id":client.peer.peerId}
   const packet = await packetQuery(message)
 
-  // still just sending a packet into the network of peers, not directly to the new peer...
   client.peer.query(packet);
 }
 
