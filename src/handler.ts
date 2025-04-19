@@ -7,6 +7,8 @@ import { PEER_ID, SIGNING_KEY, CLUSTER_ID, SHARED_KEY, PEER_ID_MASK } from './va
 import type EventEmitter from 'socket:events';
 import { setupPeerMessages, listenerKeys, _handleMessage, pid } from './utils.js';
 import { Peer, RemotePeer } from 'socket:latica/index'
+import type { Socket } from 'socket:dgram';
+import { PacketPong } from 'socket:latica/packets';
 // import { rand64 } from 'socket:crypto';
 
 // import { createSocket, Socket } from 'dgram';
@@ -186,22 +188,45 @@ function delay(ms: number): Promise<void> {
 async function peerize(displayName: string, userClusterId: string){
   const id = await Encryption.createId(displayName);
   const dgram = require('dgram');
-  
-  // TODO: Undo this string
+
   const peer = new Peer({"peerId":id, clusterId: userClusterId}, dgram)
   
-  peer.init( () => {console.log("Peer is initialized")})
+  await peer.init(() => {console.log("Peer is initialized")})
+
+  const _handler = (data: any, { port, address }: { port: number; address: string }) => {
+    console.log("Handling query packet.");
+    console.log(data);   
+  };
+  
+  // peer._onQuery =((...args: any[]) => {
+  //   console.log("Got query packet")
+  //   const [data, info] = args;
+  //   _handler(data, info);    ;
+  // });
+
+
+  (peer as any).onQuery = async (message: any ) => {
+    const operation = message.operation
+    const recPort = message.port
+    const recAddr = message.address
+    switch (operation){
+      case "getName": console.log("Received gotName from port: " + recPort);break;
+      case "hello": console.log("Received hello from port: " + recPort);break;
+      default: console.log("Couldnt parse message: " + message);
+    }
+
+  }
+  
+  peer._onError = (err: any) => {console.log("_onError: " + err)};
   
   peer.join(userClusterId);
-  peer.socket.on("requestName", (message: any) => {console.log("YESYESYSEYESYSEYE HOLY FUUUUUCKKKKKKK")});
-  peer.socket.on("#send", (message: any) => {console.log("YESYESYSEYESYSEYE HOLY FUUUUUCKKKKKKK")});
+  
   return peer;
 }
 
 export async function startClient(displayName: string, userClusterId: string){
   const peer = await peerize(displayName, userClusterId);
   const client = await clusterize(displayName, userClusterId, peer);
-  // const client = new Client(displayName, peer.peerId, peer.socket, userClusterId, [], peer.socket, peer);
   return client; 
 }
 

@@ -3,6 +3,27 @@ import { Client, User } from './handler.js';
 import { addMessageToChat } from './index.js';
 import Buffer from 'socket:buffer';
 import { PEER_ID_MASK } from './values.js';
+import { Packet } from 'socket:network';
+import { PacketJoin, PacketQuery } from 'socket:latica/packets';
+import { randomBytes } from 'socket:crypto';
+import { Peer, RemotePeer } from 'socket:latica/index';
+
+async function packetQuery(query: any){
+  const packet = new PacketQuery({
+    message: query,
+    usr1: Buffer.from(String(Date.now())),
+    usr3: Buffer.from(randomBytes(32)),
+    usr4: Buffer.from(String(1))
+  })
+  const data = await Packet.encode(packet)
+
+  const p = Packet.decode(data) // finalize a packet
+  // console.log("Constructed packet: " + JSON.stringify(final));
+  // return JSON.stringify(p)
+
+  return p
+}
+
 
 export function pid(peerId: string){
   return peerId.substring(0, 8);
@@ -84,15 +105,22 @@ export function _handleMessage(client: Client, subcluster: any, message: any){
 async function _handleJoin(client: Client, subcluster: any, newPeer: any){
   
   const newPeerId = newPeer.peerId;
+  const newPeerPort = newPeer._peer.port;
+  const newPeerAddress = newPeer._peer.address;
+
   if(PEER_ID_MASK.includes(newPeerId)){
     return;
   }
-  console.log("==================Handling join================");
-  const msg = JSON.stringify("requestName");
-  const buf = Buffer.from(msg);
+  // console.log("==================Handling join================");
   
-  client.peer.send(buf, newPeer._peer.port, newPeer._peer.address);
-  console.log("Sent requestName to new peer: " + pid(newPeerId));
+  const peers: RemotePeer[] = client.peer.peers
+  console.log("peers before: " + peers.length)
+  const nonTargets = peers.filter((p: RemotePeer) => {return p.peerId != newPeerId})
+  console.log("peers after: " + nonTargets.length)
+
+  const message = {"operation":"getName", "address":newPeerAddress, "port":newPeerPort}
+  const packet = await packetQuery(message)
+  client.peer.mcast(packet, []);
 }
 
 function _requestName(client: Client, subcluster: any, requesterMessage: any){
@@ -121,10 +149,6 @@ function _resolveName(client: Client, subcluster: any, peerMessage: any){
   addMessageToChat(`${peerName} has joined the chat.`);
 }
 
-
-/*
-When we have received a leave event
-*/
 function _handleLeave(client: Client, subcluster: any, peer: any){
   console.log("==================Handling leave================");
   const payload = JSON.parse(peer);
