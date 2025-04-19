@@ -47,9 +47,6 @@ export function setupPeerMessages(client: Client, subcluster: any){
   subcluster.on("directMessage", (message: any) => {
     _handleDirectMessage(client, subcluster, message);
   });
-  client.socket.on("directMessage", (message: any) => {
-    _handleDirectMessageSocket(client, subcluster, message);
-  });
 
   subcluster.on("#join", async (newPeer: any) => {
     await _handleJoin(client, subcluster, newPeer);

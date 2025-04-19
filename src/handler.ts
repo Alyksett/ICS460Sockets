@@ -109,25 +109,7 @@ export class Client{
   public sendDirectMessage(message: any, recipient: User){
     const packagedMessage = Buffer.from(JSON.stringify({ message: message, peer: this.peerId, author: this.displayName }));
     const recipientId = recipient.peer.peerId;
-    const recipientUser: User | null = this.getUserById(recipientId);
-    if(!recipientUser){
-      console.error("Couldn't find peer with id: " + recipientId);
-      return;
-    }
-    const recipientPeer: RemotePeer | null = this.peer.getPeer(recipientId);
-    if(!recipientPeer){
-      console.error("Couldn't find peer with id: " + recipientId);
-      return;
-    }
-    const addr: string | null = recipientPeer.address;
-    const port: number | null = recipientPeer.port;
-    if(!addr || !port){
-      console.error("Couldn't find address or port for peer with id: " + recipientId + "\nPort: " + port + "\nAddr: " + addr);
-      return;
-    }
-    console.log(`Sending message to ${pid(recipientId)} at ${addr}:${port}`);
-    this.peer.send(packagedMessage, port, addr);
-    
+    this.subcluster.emit("directMessage", packagedMessage);
   }
 
   public sendMessage(message: any){
