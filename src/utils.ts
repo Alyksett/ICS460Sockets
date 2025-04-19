@@ -4,6 +4,7 @@ import Buffer from 'socket:buffer';
 import { Packet } from 'socket:network';
 import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
+import type { RemotePeer } from 'socket:latica/index';
 
 export async function packetQuery(query: any){
   const packet = new PacketQuery({
@@ -98,9 +99,12 @@ export function _handleMessage(client: Client, subcluster: any, message: any){
   const finalMessage = `${messageAuthor}: ${messageContent}`;
   addMessageToChat(finalMessage);
 }
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+
+// This is called when the subcluster (network of peers) receives a #join event 
+// This happens internally when we do subcluster things
+
+// the newPeer argument is given to us by SocketSupply and it's... some sort of type.
+// It's similar to RemotePeer but I can't figure out what it really is
 async function _handleJoin(client: Client, subcluster: any, newPeer: any){
   // in theory (and ideally) we'd use these message the peer themselves, but right now we're 
   // just sending a PacketQuery to the network... 
@@ -108,9 +112,15 @@ async function _handleJoin(client: Client, subcluster: any, newPeer: any){
   const newPeerPort = newPeer._peer.port;
   const newPeerAddress = newPeer._peer.address;
 
+  // We want to get this new peer's name, so we construct a PacketQuery to send into the network of peers
+  // Again, should probably just send a msg to the actual peer themselves via client.peer.send(msg, newPeerPort, newPeerAddress)
+  // but I spent like 6 hours trying that and couldn't get it to work :shrug: lol
   const message = {"operation":"getName", "address":client.peer.address, "port":client.peer.port, "id":client.peer.peerId}
+  
+  // use util funtion to construct a socketsupply PacketQuery
   const packet = await packetQuery(message)
 
+  // send this packet to the network (and eventually the new peer will get it and respond to us)
   client.peer.query(packet);
 }
 
