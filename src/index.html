@@ -29,7 +29,7 @@
         <form id="loginForm">
           <div id="nameLogin">
             <label for="displayName">Display Name:</label>
-            <input type="text" id="displayName" required />
+            <input onkeyup="sendMessageEnter()"   type="text" id="displayName" required />
           </div>
             <br />
           <div id="clusterLogin">
@@ -53,7 +53,7 @@
          
         <!-- Message Input -->
         <div>
-            <input type="text" id="messageInput" placeholder="Type a message..." />
+            <input type="text"    onkeyup="sendMessageEnter()" onkeypress="sendMessageEnter()" id="messageInput" placeholder="Type a message..." />
             <button onclick="sendMessage()">Send as</button>
         </div>
         <!-- Message Type -->

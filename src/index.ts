@@ -19,6 +19,9 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   }
 
   (window as any).sendMessage = () => sendMessage(client);
+  (window as any).sendMessageEnter = () => sendMessageEnter(client);
+  
+
   (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
   (window as any).handleLogout = () => handleLogout(client);
   console.log("Client initialized");
@@ -165,4 +168,18 @@ function populateDirectMessageSelect(client: Client){
     opt.textContent = option;
     directMessageSelect.appendChild(opt);
   });
+
 }
+ 
+function sendMessageEnter( client: Client) { 
+  const inputElement = document.getElementById("messageInput") as HTMLInputElement;
+  inputElement.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault(); // Prevent the default action (e.g., form submission)
+      console.log("Enter key pressed!");
+      // Call your sendMessage function here
+      sendMessage(client);
+    }
+  });
+   
+ }
