@@ -1,6 +1,8 @@
 import { Client, startClient, User } from './handler.js'
+import { pid } from './utils.js';
 
 document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
+  console.log("Login form submitted");
   event.preventDefault();
   const displayName = (document.getElementById('displayName') as HTMLInputElement).value;
   const clusterId = (document.getElementById('clusterId') as HTMLInputElement).value;
@@ -24,21 +26,53 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
 
   (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
   (window as any).handleLogout = () => handleLogout(client);
+  // (window as any).utilityButton = () => utilityButton(client);
   console.log("Client initialized");
   
-  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}`;
+  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${pid(client.peer.peerId)}`;
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
+
 });
 
+function getDirectMessageUser(client: Client): User | null{
+  const selectElement = document.getElementById('directMessageSelect') as HTMLSelectElement ;
+  if(!selectElement){
+    console.error("Select element not found");
+    return null;
+  }	
+  const selectedOption = selectElement.options[selectElement.selectedIndex];
+  let recipient = null;
+  for(const remotePeer of client.getPeers()){
+    const resolvedUser: User | null = client.getUserById(remotePeer.peerId);
+    if(!resolvedUser){
+      console.error("Couldn't find user with id: " + remotePeer.peerId);
+      continue;
+    }
+    if(resolvedUser.displayName === selectedOption.textContent){
+      recipient = resolvedUser
+    }
+  }
+  if(!recipient){
+    return null;
+  }
+  return recipient;
+}
+
+function utilityButton(client: Client){
+  client.utility();
+  // TODO: REMOVE THIS
+  // (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
+  // (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
+}
 function handleLogout(client: Client){
   client.handleShutdown();
-  (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
-  (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
+  // TODO: REMOVE THIS
+  // (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
+  // (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
 
 function sendMessage(client: Client) {
-  const users: User[] = client.getPeers();
   const inputElement = document.getElementById("messageInput") as HTMLInputElement;
   let inputValue = "";
   if (inputElement) {
@@ -58,26 +92,11 @@ function sendMessage(client: Client) {
   const isDirectMessage = currentMessageType === "Direct Message";
   console.log("isDirectMessage: " + isDirectMessage);
   if(isDirectMessage){
-    const selectElement = document.getElementById('directMessageSelect') as HTMLSelectElement ;
-    if(!selectElement){
-      console.error("Select element not found");
-      return;
-    }	
-    
-    const selectedOption = selectElement.options[selectElement.selectedIndex];
-    console.log("Selected option: " + selectedOption);
-    let recipient = null;
-    for(const u of users){
-      if(u.displayName === selectedOption.textContent){
-        recipient = u
-      }
-    }
-    console.log("Recipient: " + recipient); 
+    const recipient = getDirectMessageUser(client);
     if(!recipient){
-      console.error("Couldn't find recipient in logged in users");
+      console.error("No recipient found");
       return;
     }
-    console.log("Found recipient in logged in users. Sending direct message")
     addMessageToChat(`You to ${recipient.displayName}: ` + inputValue, true);
     client.sendDirectMessage(inputValue, recipient);
     return;
@@ -111,8 +130,6 @@ export function addMessageToChat(message: string, directMessage: boolean = false
 function toggleDirectMessageSelect(client: Client){
   console.log("Toggling direct message select");
   
-  const peers = client.getPeers();
-
   const messageTypeElement = document.getElementById('sendMessageType') as HTMLSelectElement;
   if(!messageTypeElement){
     console.error("Message type element not found");
@@ -142,8 +159,8 @@ function toggleDirectMessageSelect(client: Client){
 }
 
 function getDirectMessageOptions(client: Client): string[]{
-  const peers = client.getPeers();
-  const peerNames = peers.map((p: User) => p.displayName);
+  const users = client.users;
+  const peerNames = users.map((u: User) => u.displayName);
   if(peerNames.length === 0){
     peerNames.push("No users online");
   }

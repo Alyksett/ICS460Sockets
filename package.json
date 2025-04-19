@@ -23,6 +23,8 @@
     "homepage": "https://github.com/Alyksett/ICS460Sockets#readme",
     "dependencies": {
         "@socketsupply/socket": "^0.6.0-rc.8",
+        "@types/node": "^22.14.1",
+        "dgram": "^1.0.1",
         "typescript": "^5.8.3"
     },
     "devDependencies": {

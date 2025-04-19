@@ -1,7 +1,31 @@
 import { Client, User } from './handler.js';
 import { addMessageToChat } from './index.js';
+import Buffer from 'socket:buffer';
+import { Packet } from 'socket:network';
+import { PacketQuery } from 'socket:latica/packets';
+import { randomBytes } from 'socket:crypto';
+import type { RemotePeer } from 'socket:latica/index';
 
-function pid(peerId: string){
+
+
+export async function packetQuery(query: any){
+  // I copied all this from the source code and it works
+  // They don't really make it clear what usr1/2/3 are but... it works?
+  const packet = new PacketQuery({
+    message: query,
+    usr1: Buffer.from(String(Date.now())),
+    usr3: Buffer.from(randomBytes(32)),
+    usr4: Buffer.from(String(1))
+  })
+  // also don't know why we're encoding and decoding
+  const data = await Packet.encode(packet)
+  const p = Packet.decode(data)
+
+  return p
+}
+
+
+export function pid(peerId: string){
   return peerId.substring(0, 8);
 }
 // do something better than this
@@ -24,12 +48,13 @@ export function setupPeerMessages(client: Client, subcluster: any){
     _handleDirectMessage(client, subcluster, message);
   });
 
-  subcluster.on("#join", (newPeer: any) => {    
-    _handleJoin(client, subcluster, newPeer);
+  subcluster.on("#join", async (newPeer: any) => {
+    await _handleJoin(client, subcluster, newPeer);
   });
   subcluster.on("logout", (peer: any) => {
     _handleLeave(client, subcluster, peer);
   });
+
 }
 
 
@@ -46,8 +71,22 @@ function _handleDirectMessage(client: Client, subcluster: any, message: any){
   const finalMessage: string = `(Direct) ${messageAuthor}: ${messageContent}`;
   addMessageToChat(finalMessage, true);
 }
+function _handleDirectMessageSocket(client: Client, subcluster: any, message: any){
+  console.log("==================Handling directMessageSocket================");
+  const parsedMessage = JSON.parse(message.toString());
+  const messageContent = parsedMessage.message;
+  const messagePeer = parsedMessage.peer;
+  const messageAuthor = parsedMessage.author;
+  if(messagePeer === client.peerId){
+    console.log("Direct message is from self. Ignoring.");
+    return;
+  }
+  const finalMessage: string = `(Direct) ${messageAuthor}: ${messageContent}`;
+  addMessageToChat(finalMessage, true);
+}
 
 export function _handleMessage(client: Client, subcluster: any, message: any){
+  console.log("==================Handling message================");
   const parsedMessage = JSON.parse(message.toString());
   const messageContent = parsedMessage.message;
   const messagePeer = parsedMessage.peer;
@@ -60,23 +99,32 @@ export function _handleMessage(client: Client, subcluster: any, message: any){
   addMessageToChat(finalMessage);
 }
 
-function _handleJoin(client: Client, subcluster: any, newPeer: any){
+// This is called when the subcluster (network of peers) receives a #join event 
+// This happens internally when we do subcluster things
+
+// the newPeer argument is given to us by SocketSupply and it's... some sort of type.
+// It's similar to RemotePeer but I can't figure out what it really is
+async function _handleJoin(client: Client, subcluster: any, newPeer: any){
+  // in theory (and ideally) we'd use these message the peer themselves, but right now we're 
+  // just sending a PacketQuery to the network... 
   const newPeerId = newPeer.peerId;
-  if(newPeerId === client.peerId){
-    console.log("Self join detected. Ignoring.");
-    return;
-  }
-  const resolvedPeer = subcluster.peers.get(newPeerId);
+  const newPeerPort = newPeer._peer.port;
+  const newPeerAddress = newPeer._peer.address;
+
+  // We want to get this new peer's name, so we construct a PacketQuery to send into the network of peers
+  // Again, should probably just send a msg to the actual peer themselves via client.peer.send(msg, newPeerPort, newPeerAddress)
+  // but I spent like 6 hours trying that and couldn't get it to work :shrug: lol
+  const message = {"operation":"getName", "address":client.peer.address, "port":client.peer.port, "id":client.peer.peerId}
   
-  if(resolvedPeer){
-    console.log("Found peer that just joined: " + resolvedPeer.peerId);
-    resolvedPeer.emit("requestName", { peerId: client.peerId });
-  }else{
-    console.error("Peer not found in subcluster: " + pid(newPeerId));
-  }
+  // use util funtion to construct a socketsupply PacketQuery
+  const packet = await packetQuery(message)
+
+  // send this packet to the network (and eventually the new peer will get it and respond to us)
+  client.peer.query(packet);
 }
 
 function _requestName(client: Client, subcluster: any, requesterMessage: any){
+  console.log("==================Handling requestName================");
   const json = JSON.parse(requesterMessage);
   const requesterId = json.peerId;
   if(requesterId === client.peerId){
@@ -87,25 +135,22 @@ function _requestName(client: Client, subcluster: any, requesterMessage: any){
 }
 
 function _resolveName(client: Client, subcluster: any, peerMessage: any){
+  console.log("==================Handling resolveName================");
   const json = JSON.parse(peerMessage);
   const peerName = json.displayName;
   const peerId = json.peerId
-  const resolvedPeer = subcluster.peers.get(peerId);
-  if(!resolvedPeer){
+  const resolvedUser: User | null = client.getUserById(peerId)
+  if(!resolvedUser){
     console.error(`Peer with id: ${pid(peerId)} not found in subcluster`);
     return;
   }
-  const newUser = new User(peerName, resolvedPeer);
-  client.users.push(newUser);
+  resolvedUser.setName(peerName);
+  
   addMessageToChat(`${peerName} has joined the chat.`);
 }
 
-
-/*
-When we have received a leave event
-*/
 function _handleLeave(client: Client, subcluster: any, peer: any){
-  console.log("Handling leave");
+  console.log("==================Handling leave================");
   const payload = JSON.parse(peer);
   const leftPeerName: string | null = client.removePeer(payload.peerId);
   if(!leftPeerName){
