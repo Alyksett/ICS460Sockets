@@ -41,15 +41,13 @@ export class Client{
     this.clusterId = clusterId;
     this.subcluster = subcluster;
     this.peer = peer;
+    // todo: we're not actually mapping the RemotePeer and the name, since we don't have access to the client stuff.
+    // probably just need to make the client first and then re-assign these callbacks. ATM this is broken
     for(const p of this.peer.peers){
       const newUser = new User("", p);
       if(PEER_ID_MASK.includes(p.peerId) || this.peerId === p.peerId) continue;
       this.users.push(newUser);
     }
-    
-    // console.log(this.peer.peers);
-    // console.log("Client Created with users (Abbr):")
-    // console.log(this.users.map((u: User) => u.peer.peerId));
   }
 
   
@@ -178,6 +176,8 @@ async function peerize(displayName: string, userClusterId: string){
   }
 
   const _recSendName = async (message: any) => {
+    // todo: we're not actually mapping the RemotePeer and the name, since we don't have access to the client stuff.
+    // probably just need to make the client first and then re-assign these callbacks
     console.log("Mapped pid " + pid(message.id) + " with display name: " + message.name)
   }
 
