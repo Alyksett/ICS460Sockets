@@ -106,42 +106,15 @@ export function _handleMessage(client: Client, subcluster: any, message: any){
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
-async function _handleJoin(client: Client, subcluster: any, newPeer: any, attempts=0){
-  // if(attempts>3){
-  //   // console.log("Exceeded max attempts");
-  //   return
-  // }
+async function _handleJoin(client: Client, subcluster: any, newPeer: any){
   const newPeerId = newPeer.peerId;
   const newPeerPort = newPeer._peer.port;
   const newPeerAddress = newPeer._peer.address;
 
-  // if(PEER_ID_MASK.includes(newPeerId)){
-  //   return;
-  // }
-  // console.log("==================Handling join================");
-  
-  // const peers: RemotePeer[] = client.peer.peers
-  
-  // // console.log("peers before: " + peers.length)
-  // const mask = []
-  
-  // // console.log("newPeerId: " + newPeerId);
-  // for(const p of peers){
-  //   // console.log("p.peerId: " + p.peerId);
-  //   const pd = p.peerId;
-  //   if(!(pd === newPeerId)){
-  //     mask.push(p)
-  //   }
-  // }
-  // if(peers.length === mask.length){
-  //   // console.log("New peer hasn't joined the cluster yet. retrying...")
-  //   await delay(1000);
-  //   await _handleJoin(client, subcluster, newPeer, attempts + 1);
-  // }
-  console.log("DETECTED JOIN: SENDING PACKET FROM ID: " + pid(client.peer.peerId)  )
   const message = {"operation":"getName", "address":client.peer.address, "port":client.peer.port, "id":client.peer.peerId}
   const packet = await packetQuery(message)
 
+  // still just sending a packet into the network of peers, not directly to the new peer...
   client.peer.query(packet);
 }
 

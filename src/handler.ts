@@ -187,34 +187,15 @@ function delay(ms: number): Promise<void> {
 }
 async function peerize(displayName: string, userClusterId: string){
   const id = await Encryption.createId(displayName);
+  const clusterId = await Encryption.createClusterId(userClusterId)
+
   const dgram = require('dgram');
 
-  const peer = new Peer({"peerId":id, clusterId: userClusterId}, dgram)
+  const peer = new Peer({"peerId":id, clusterId: clusterId}, dgram)
   
   await peer.init(() => {console.log("Peer is initialized")})
 
-  const _handler = (data: any, { port, address }: { port: number; address: string }) => {
-    console.log("Handling query packet.");
-    console.log(data);   
-  };
-  
-  // peer._onQuery =((...args: any[]) => {
-  //   console.log("Got query packet")
-  //   const [data, info] = args;
-  //   _handler(data, info);    ;
-  // });
-
-
-  // (peer as any).onSend = async (data: any, port: number, address: string) => {
-  //   console.log("Got packet type: " + data.type)
-    
-  //   if(data.type === 8){
-  //     console.log("Got query")
-  //     console.log(data);
-  //   }
-  // }
-
-  const _recGetName = async (peerId: any) => {
+  const _recGetName = async () => {
     const message = {"operation":"sendName", "name": displayName, "address":peer.address, "port":peer.port, "id":peer.peerId}
     const packet = await packetQuery(message)
     console.log("Sending name back");
@@ -225,27 +206,17 @@ async function peerize(displayName: string, userClusterId: string){
     console.log("Mapped pid " + pid(message.id) + " with display name: " + message.name)
   }
 
-  
-
   (peer as any).onQuery = async (packet: any ) => {
-    // console.log("Query got message: " + JSON.stringify(message));
     const json = packet.message
     const operation = json.operation
-    const recPort = json.port
-    const recAddr = json.address
-    const recId = json.id
     switch (operation){
-      case "getName": await _recGetName(recId);break;
+      case "getName": await _recGetName();break;
       case "sendName": await _recSendName(json);break;
-      default: console.log("Couldnt parse message: " + operation);
+      default: console.log("Couldn't parse operation: " + operation);
     }
-
   }
 
-  
-  
-  peer._onError = (err: any) => {console.log("_onError: " + err)};
-  
+  peer._onError = (err: any) => {console.log("_onError: " + err)}; 
   peer.join(userClusterId);
   
   return peer;
