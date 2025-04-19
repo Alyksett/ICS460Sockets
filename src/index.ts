@@ -26,7 +26,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   // (window as any).utilityButton = () => utilityButton(client);
   console.log("Client initialized");
   
-  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${pid(client.peerId)}`;
+  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${pid(client.peer.peerId)}`;
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
 

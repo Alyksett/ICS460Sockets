@@ -7,8 +7,10 @@ import { Packet } from 'socket:network';
 import { PacketJoin, PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
 import { Peer, RemotePeer } from 'socket:latica/index';
+import { lchown } from 'socket:fs';
+import { toBuffer } from 'socket:util';
 
-async function packetQuery(query: any){
+export async function packetQuery(query: any){
   const packet = new PacketQuery({
     message: query,
     usr1: Buffer.from(String(Date.now())),
@@ -101,26 +103,46 @@ export function _handleMessage(client: Client, subcluster: any, message: any){
   const finalMessage = `${messageAuthor}: ${messageContent}`;
   addMessageToChat(finalMessage);
 }
-
-async function _handleJoin(client: Client, subcluster: any, newPeer: any){
-  
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+async function _handleJoin(client: Client, subcluster: any, newPeer: any, attempts=0){
+  // if(attempts>3){
+  //   // console.log("Exceeded max attempts");
+  //   return
+  // }
   const newPeerId = newPeer.peerId;
   const newPeerPort = newPeer._peer.port;
   const newPeerAddress = newPeer._peer.address;
 
-  if(PEER_ID_MASK.includes(newPeerId)){
-    return;
-  }
+  // if(PEER_ID_MASK.includes(newPeerId)){
+  //   return;
+  // }
   // console.log("==================Handling join================");
   
-  const peers: RemotePeer[] = client.peer.peers
-  console.log("peers before: " + peers.length)
-  const nonTargets = peers.filter((p: RemotePeer) => {return p.peerId != newPeerId})
-  console.log("peers after: " + nonTargets.length)
-
-  const message = {"operation":"getName", "address":newPeerAddress, "port":newPeerPort}
+  // const peers: RemotePeer[] = client.peer.peers
+  
+  // // console.log("peers before: " + peers.length)
+  // const mask = []
+  
+  // // console.log("newPeerId: " + newPeerId);
+  // for(const p of peers){
+  //   // console.log("p.peerId: " + p.peerId);
+  //   const pd = p.peerId;
+  //   if(!(pd === newPeerId)){
+  //     mask.push(p)
+  //   }
+  // }
+  // if(peers.length === mask.length){
+  //   // console.log("New peer hasn't joined the cluster yet. retrying...")
+  //   await delay(1000);
+  //   await _handleJoin(client, subcluster, newPeer, attempts + 1);
+  // }
+  console.log("DETECTED JOIN: SENDING PACKET FROM ID: " + pid(client.peer.peerId)  )
+  const message = {"operation":"getName", "address":client.peer.address, "port":client.peer.port, "id":client.peer.peerId}
   const packet = await packetQuery(message)
-  client.peer.mcast(packet, []);
+
+  client.peer.query(packet);
 }
 
 function _requestName(client: Client, subcluster: any, requesterMessage: any){

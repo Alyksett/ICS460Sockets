@@ -5,7 +5,7 @@ import Buffer from 'socket:buffer';
 // import { addMessageToChat } from './index.js';
 import { PEER_ID, SIGNING_KEY, CLUSTER_ID, SHARED_KEY, PEER_ID_MASK } from './values.js';
 import type EventEmitter from 'socket:events';
-import { setupPeerMessages, listenerKeys, _handleMessage, pid } from './utils.js';
+import { setupPeerMessages, listenerKeys, _handleMessage, pid, packetQuery } from './utils.js';
 import { Peer, RemotePeer } from 'socket:latica/index'
 import type { Socket } from 'socket:dgram';
 import { PacketPong } from 'socket:latica/packets';
@@ -205,17 +205,44 @@ async function peerize(displayName: string, userClusterId: string){
   // });
 
 
-  (peer as any).onQuery = async (message: any ) => {
-    const operation = message.operation
-    const recPort = message.port
-    const recAddr = message.address
+  // (peer as any).onSend = async (data: any, port: number, address: string) => {
+  //   console.log("Got packet type: " + data.type)
+    
+  //   if(data.type === 8){
+  //     console.log("Got query")
+  //     console.log(data);
+  //   }
+  // }
+
+  const _recGetName = async (peerId: any) => {
+    const message = {"operation":"sendName", "name": displayName, "address":peer.address, "port":peer.port, "id":peer.peerId}
+    const packet = await packetQuery(message)
+    console.log("Sending name back");
+    peer.query(packet);
+  }
+
+  const _recSendName = async (message: any) => {
+    console.log("Mapped pid " + pid(message.id) + " with display name: " + message.name)
+  }
+
+  
+
+  (peer as any).onQuery = async (packet: any ) => {
+    // console.log("Query got message: " + JSON.stringify(message));
+    const json = packet.message
+    const operation = json.operation
+    const recPort = json.port
+    const recAddr = json.address
+    const recId = json.id
     switch (operation){
-      case "getName": console.log("Received gotName from port: " + recPort);break;
-      case "hello": console.log("Received hello from port: " + recPort);break;
-      default: console.log("Couldnt parse message: " + message);
+      case "getName": await _recGetName(recId);break;
+      case "sendName": await _recSendName(json);break;
+      default: console.log("Couldnt parse message: " + operation);
     }
 
   }
+
+  
   
   peer._onError = (err: any) => {console.log("_onError: " + err)};
   
