@@ -6,16 +6,18 @@ import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
 import type { RemotePeer } from 'socket:latica/index';
 
+
+
 export async function packetQuery(query: any){
+  // I copied all this from the source code and it works
+  // They don't really make it clear what usr1/2/3 are but... it works?
   const packet = new PacketQuery({
     message: query,
     usr1: Buffer.from(String(Date.now())),
     usr3: Buffer.from(randomBytes(32)),
     usr4: Buffer.from(String(1))
   })
-  // Not sure why we're encoding and decoding, but they do this in the source
-  // code so we're going with it.
-
+  // also don't know why we're encoding and decoding
   const data = await Packet.encode(packet)
   const p = Packet.decode(data)
 
