@@ -134,9 +134,9 @@ async function _handleJoin(client: Client, subcluster: any, newPeer: any){
   
   // use util funtion to construct a socketsupply PacketQuery
   const packet = await packetQuery(message, client.peer)
-
+  client.peer.addIndexedPeer(newPeer);
   // send this packet to the network (and eventually the new peer will get it and respond to us)
-  client.peer.query(packet);
+  client.peer.socket.emit("newPeer", newPeer)
 }
 
 function _requestName(client: Client, subcluster: any, requesterMessage: any){

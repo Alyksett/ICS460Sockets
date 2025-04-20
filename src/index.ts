@@ -1,3 +1,4 @@
+import type { RemotePeer } from 'socket:latica';
 import { Client, startClient, User } from './handler.js'
 import { pid } from './utils.js';
 
@@ -16,7 +17,7 @@ if(SKIP_LOGIN){
     console.error("Error starting client:", error);
   }
 
-  (window as any).sendMessage = () => sendMessage(client);
+  (window as any).sendMessage = async  () => await sendMessage(client);
   (window as any).sendMessageEnter = () => sendMessageEnter(client);
   
 
@@ -49,7 +50,7 @@ if(SKIP_LOGIN){
       return;
     }
   
-    (window as any).sendMessage = () => sendMessage(client);
+    (window as any).sendMessage = async () => await sendMessage(client);
     (window as any).sendMessageEnter = () => sendMessageEnter(client);
     
   
@@ -65,28 +66,16 @@ if(SKIP_LOGIN){
   });
 }
 
-function getDirectMessageUser(client: Client): User | null{
+async function getDirectMessageUser(client: Client): Promise<RemotePeer | null>{
   const selectElement = document.getElementById('directMessageSelect') as HTMLSelectElement ;
   if(!selectElement){
     console.error("Select element not found");
     return null;
   }	
   const selectedOption = selectElement.options[selectElement.selectedIndex];
-  let recipient = null;
-  for(const remotePeer of client.getPeers()){
-    const resolvedUser: User | null = client.getUserById(remotePeer.peerId);
-    if(!resolvedUser){
-      console.error("Couldn't find user with id: " + remotePeer.peerId);
-      continue;
-    }
-    if(resolvedUser.displayName === selectedOption.textContent){
-      recipient = resolvedUser
-    }
-  }
-  if(!recipient){
-    return null;
-  }
-  return recipient;
+  const selectedPeerId = selectedOption.value
+ 
+  return client.getPeerbyId(selectedPeerId);
 }
 
 async function utilityButton(client: Client){
@@ -102,7 +91,7 @@ function handleLogout(client: Client){
   // (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
 
-function sendMessage(client: Client) {
+async function sendMessage(client: Client) {
   const inputElement = document.getElementById("messageInput") as HTMLInputElement;
   let inputValue = "";
   if (inputElement) {
@@ -122,13 +111,14 @@ function sendMessage(client: Client) {
   const isDirectMessage = currentMessageType === "Direct Message";
   console.log("isDirectMessage: " + isDirectMessage);
   if(isDirectMessage){
-    const recipient = getDirectMessageUser(client);
+    const recipient = await getDirectMessageUser(client);
+    console.log("sending to recipient: " + pid(recipient?.peerId))
     if(!recipient){
       console.error("No recipient found");
       return;
     }
-    addMessageToChat(`You to ${recipient.displayName}: ` + inputValue, true);
-    client.sendDirectMessage(inputValue, recipient);
+    addMessageToChat(`You to ${pid(recipient.peerId)}: ` + inputValue, true);
+    await client.sendDirectMessage(inputValue, recipient);
     return;
   }
   
@@ -166,7 +156,6 @@ function toggleDirectMessageSelect(client: Client){
     return;
   }
   const currentMessageType = messageTypeElement.value
-  console.log("Current message type: " + currentMessageType);
   const isDirectMessage = currentMessageType === "Direct Message";
   
   const directMessageSelect = document.getElementById('directMessageSelect');
@@ -188,19 +177,12 @@ function toggleDirectMessageSelect(client: Client){
   }
 }
 
-function getDirectMessageOptions(client: Client): string[]{
-  const users = client.users;
-  const peerNames = users.map((u: User) => u.displayName);
-  if(peerNames.length === 0){
-    peerNames.push("No users online");
-  }
-  return peerNames
-}
 
-function populateDirectMessageSelect(client: Client){
+
+async function populateDirectMessageSelect(client: Client){
   console.log("Populating direct message select");
   const directMessageSelect = document.getElementById('directMessageSelect');
-  const options = getDirectMessageOptions(client);
+  const peers = await client.getPeers();
   if(!directMessageSelect){
     console.error("Element not found");
     return;
@@ -209,23 +191,22 @@ function populateDirectMessageSelect(client: Client){
   directMessageSelect.innerText = '';
   
   // Populate with new options
-  options.forEach((option: any) => {
+  peers.forEach((peer: RemotePeer) => {
     const opt = document.createElement('option');
-    opt.value = option;
-    opt.textContent = option;
+    opt.value = peer.peerId;
+    opt.textContent = pid(peer.peerId);
     directMessageSelect.appendChild(opt);
   });
-
 }
  
 function sendMessageEnter( client: Client) { 
   const inputElement = document.getElementById("messageInput") as HTMLInputElement;
-  inputElement.addEventListener("keydown", (event) => {
+  inputElement.addEventListener("keydown", async (event) => {
     if (event.key === "Enter") {
       event.preventDefault(); // Prevent the default action (e.g., form submission)
       console.log("Enter key pressed!");
       // Call your sendMessage function here
-      sendMessage(client);
+      await sendMessage(client);
     }
   });
    

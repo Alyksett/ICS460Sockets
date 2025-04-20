@@ -3,7 +3,9 @@ import Buffer from 'socket:buffer';
 import { SIGNING_KEY, CLUSTER_ID, PEER_ID_MASK, strangePeers } from './values.js';
 import type EventEmitter from 'socket:events';
 import { setupPeerMessages, _handleMessage, pid, packetQuery, packetQueryTest } from './utils.js';
-import { Peer, RemotePeer } from 'socket:latica/index'
+import { Packet, Peer, RemotePeer } from 'socket:latica/index'
+import * as sock from 'socket:dgram'
+import { addMessageToChat } from './index.js';
 
 export class User{
   displayName: string;
@@ -33,6 +35,8 @@ export class Client{
   subcluster: ExtendedEventEmitter;
   peer: Peer;
   users: User[] = [];
+  
+  connectedPeers: any[] = []
 
   constructor(displayName: string, peerId: any, socket: any, clusterId: any, users: User[], subcluster: any, peer: Peer){
     this.displayName = displayName;
@@ -49,28 +53,39 @@ export class Client{
       this.users.push(newUser);
     }
 
-    this.peer.socket.on("util", () => {console.log("000000000000000000")})
+    this.peer.socket.on("util", (msg: any) => {console.log(msg)})
+    this.peer.socket.on("newPeer", (newPeer: any) => {
+      this.connectedPeers.push(newPeer);
+    })
+    this.peer.socket.on("directMessage", (message: any) => {
+      
+      // console.log(`${pid(this.peer.peerId)} direct message`)
+      const json = JSON.parse(message)
+      console.log("My pid: " + pid(this.peer.peerId));
+      
+      console.log(json);
+      
+      const msg = json.message;
+      const peer = json.peer
+      const finalMessage: string = `(Direct) ${pid(peer.peerId)}: ${msg}`;
+      addMessageToChat(finalMessage, true);
+    })
   }
-
   
   public async utility(){
     const _testPacket = await packetQueryTest("test", this.peer)
+    strangePeers.push(this.peer)
     const peers = this.peer.getPeers(_testPacket, this.peer.peers, strangePeers);
-
+    if(peers.length === 0){
+      console.log("WARNING: Sending to no peers.");
+    }
     for(const p of peers){
       const id = p.peerId
       if(id === this.peer.peerId || id === this.peerId){
         continue;
       }
-      const port = p.port
-      const address = p.address
-      const data = "util";
-      this.peer.socket.emit("util");
+      this.peer.socket.emit("util", {message:"What's up man"});
     }
-
-
-
-
 
 
     console.log("===============================================");
@@ -81,6 +96,7 @@ export class Client{
 
   public handleShutdown(){
     this.subcluster.emit("logout", JSON.stringify({ peerId: this.peerId }));
+    this.peer.close();
   }
   
   public getUserById(peerId: string): User | null {
@@ -121,14 +137,38 @@ export class Client{
     return removedPeerName;
   }
 
-  public getPeers(): RemotePeer[] {
-    return this.peer.peers;
+  public async getPeers(safe=false): Promise<RemotePeer[]> {
+    return this.connectedPeers
   }
 
-  public sendDirectMessage(message: any, recipient: User){
-    const packagedMessage = Buffer.from(JSON.stringify({ message: message, peer: this.peerId, author: this.displayName }));
-    const recipientId = recipient.peer.peerId;
-    this.subcluster.emit("directMessage", packagedMessage);
+  public getConnectedPeers(): RemotePeer[]{
+    return this.connectedPeers
+  }
+
+  public getPeerbyId(id: string){
+    for(const p of this.connectedPeers){
+      
+      if(p.peerId === id){
+        return p
+      }
+    }
+    console.log(`Peer with id ${pid(id)} not found in connected peers.`);
+  }
+
+  public async sendDirectMessage(message: any, rec: RemotePeer){
+    const packagedMessage = Buffer.from(JSON.stringify({ message: message, peer: await this.peer.getInfo() }));
+    // this.peer.socket.connect(rec.port, rec.address, (err: any) => {
+    //   console.log("Callback error: " + err);
+    //   this.peer.socket.send("directMessage", packagedMessage);
+      
+    // })
+    this.peer.socket.send(packagedMessage, 0, packagedMessage.length, rec.port, rec.address, (err: any) => {
+      if(err){
+        console.log("Error: " + err)
+      }
+      console.log("message has been sent.")
+    })
+    // this.peer.socket.send()
   }
 
   public sendMessage(message: any){
@@ -163,6 +203,8 @@ async function clusterize(displayName: string, userClusterId: string, peer: Peer
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+
 async function peerize(displayName: string, userClusterId: string){
   const id = await Encryption.createId(displayName);
   const clusterId = await Encryption.createClusterId(userClusterId)
@@ -170,8 +212,8 @@ async function peerize(displayName: string, userClusterId: string){
   // Create a new peer, dgram is the module that has the function to create
   // a new socket (the Peer constructor will do this internally)
   await delay(500);
-  const dgram = require('dgram');
-  const peer = new Peer({"peerId":id, clusterId: clusterId}, dgram)
+  
+  const peer = new Peer({"peerId":id, clusterId: clusterId}, sock)
   
   // When the peer is initialized this is executed
   await peer.init(() => {console.log("Peer is initialized")})
