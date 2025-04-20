@@ -48,21 +48,34 @@ export class Client{
       if(PEER_ID_MASK.includes(p.peerId) || this.peerId === p.peerId) continue;
       this.users.push(newUser);
     }
+
+    this.peer.socket.on("util", () => {console.log("000000000000000000")})
   }
 
   
   public async utility(){
+    const _testPacket = await packetQueryTest("test", this.peer)
+    const peers = this.peer.getPeers(_testPacket, this.peer.peers, strangePeers);
+
+    for(const p of peers){
+      const id = p.peerId
+      if(id === this.peer.peerId || id === this.peerId){
+        continue;
+      }
+      const port = p.port
+      const address = p.address
+      const data = "util";
+      this.peer.socket.emit("util");
+    }
+
+
+
+
+
+
     console.log("===============================================");
-    console.log("My Peer ID: " + pid(this.peer.peerId));
-    const pack = await packetQueryTest("test", this.peer)
-    console.log("Sending...")
-    const safePeers = this.peer.getPeers(pack, this.peer.peers, strangePeers);
-    console.log("Logging...")
-    console.log(safePeers)
-    // console.log("Safe Peers; " + safePeers.map((p:any) => {p.peerId}));
-    
+    // console.log("My Peer ID: " + pid(this.peer.peerId));
     // console.log("Safe Peers: " + JSON.stringify(safePeers.map((p: RemotePeer) => p.peerId), null, 2));
-    console.log("===============================================");
 
   }
 
