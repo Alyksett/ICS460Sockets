@@ -1,8 +1,8 @@
 import { network, Encryption } from 'socket:network'
 import Buffer from 'socket:buffer';
-import { SIGNING_KEY, CLUSTER_ID, PEER_ID_MASK } from './values.js';
+import { SIGNING_KEY, CLUSTER_ID, PEER_ID_MASK, strangePeers } from './values.js';
 import type EventEmitter from 'socket:events';
-import { setupPeerMessages, _handleMessage, pid, packetQuery } from './utils.js';
+import { setupPeerMessages, _handleMessage, pid, packetQuery, packetQueryTest } from './utils.js';
 import { Peer, RemotePeer } from 'socket:latica/index'
 
 export class User{
@@ -51,11 +51,17 @@ export class Client{
   }
 
   
-  public utility(){
+  public async utility(){
     console.log("===============================================");
-    console.log("My Peer ID: " + pid(this.peerId));
-    const safePeers = this.peer.peers.filter((p: RemotePeer) => !PEER_ID_MASK.includes(p.peerId));
-    console.log("Safe Peers: " + JSON.stringify(safePeers.map((p: RemotePeer) => p.peerId), null, 2));
+    console.log("My Peer ID: " + pid(this.peer.peerId));
+    const pack = await packetQueryTest("test", this.peer)
+    console.log("Sending...")
+    const safePeers = this.peer.getPeers(pack, this.peer.peers, strangePeers);
+    console.log("Logging...")
+    console.log(safePeers)
+    // console.log("Safe Peers; " + safePeers.map((p:any) => {p.peerId}));
+    
+    // console.log("Safe Peers: " + JSON.stringify(safePeers.map((p: RemotePeer) => p.peerId), null, 2));
     console.log("===============================================");
 
   }
@@ -141,13 +147,16 @@ async function clusterize(displayName: string, userClusterId: string, peer: Peer
 
   return client;
 }
-
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 async function peerize(displayName: string, userClusterId: string){
   const id = await Encryption.createId(displayName);
   const clusterId = await Encryption.createClusterId(userClusterId)
 
   // Create a new peer, dgram is the module that has the function to create
   // a new socket (the Peer constructor will do this internally)
+  await delay(500);
   const dgram = require('dgram');
   const peer = new Peer({"peerId":id, clusterId: clusterId}, dgram)
   
@@ -159,7 +168,7 @@ async function peerize(displayName: string, userClusterId: string){
     // construct the "message" field in the packet (Note this is the same  structure we're parsing before)
     const message = {"operation":"sendName", "name": displayName, "address":peer.address, "port":peer.port, "id":peer.peerId}
     // construct the actual socketsupply PacketQuery
-    const packet = await packetQuery(message)
+    const packet = await packetQuery(message, peer)
     console.log("Sending name back");
     // send the packet *to the network*. Ideally we'd send it to the person who asked, but that's not working yet.
     peer.query(packet);

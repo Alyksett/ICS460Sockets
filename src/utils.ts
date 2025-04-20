@@ -2,20 +2,36 @@ import { Client, User } from './handler.js';
 import { addMessageToChat } from './index.js';
 import Buffer from 'socket:buffer';
 import { Packet } from 'socket:network';
-import { PacketQuery } from 'socket:latica/packets';
+import { PacketPing, PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
-import type { RemotePeer } from 'socket:latica/index';
+import type { Peer, RemotePeer } from 'socket:latica/index';
 
+export async function packetQueryTest(query: any, peer: any){
+  // I copied all this from the source code and it works
+  // They don't really make it clear what usr1/2/3 are but... it works?
+  const packet = new PacketQuery({
+    message: {requesterPeerId: "-1", message:"test"},
+    usr1: Buffer.from(String(Date.now())),
+    usr3: Buffer.from(randomBytes(32)),
+    usr4: Buffer.from(String(1)),
+    clusterId:Buffer.from(peer.clusterId)
+  })
+  // also don't know why we're encoding and decoding
+  const data = await Packet.encode(packet)
+  const p = Packet.decode(data)
 
+  return p
+}
 
-export async function packetQuery(query: any){
+export async function packetQuery(query: any, peer: any){
   // I copied all this from the source code and it works
   // They don't really make it clear what usr1/2/3 are but... it works?
   const packet = new PacketQuery({
     message: query,
     usr1: Buffer.from(String(Date.now())),
     usr3: Buffer.from(randomBytes(32)),
-    usr4: Buffer.from(String(1))
+    usr4: Buffer.from(String(1)),
+    clusterId:Buffer.from(peer.clusterId)
   })
   // also don't know why we're encoding and decoding
   const data = await Packet.encode(packet)
@@ -117,7 +133,7 @@ async function _handleJoin(client: Client, subcluster: any, newPeer: any){
   const message = {"operation":"getName", "address":client.peer.address, "port":client.peer.port, "id":client.peer.peerId}
   
   // use util funtion to construct a socketsupply PacketQuery
-  const packet = await packetQuery(message)
+  const packet = await packetQuery(message, client.peer)
 
   // send this packet to the network (and eventually the new peer will get it and respond to us)
   client.peer.query(packet);
