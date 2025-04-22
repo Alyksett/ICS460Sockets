@@ -1,11 +1,10 @@
-import { network, Encryption } from 'socket:network'
+import { network, Encryption } from 'socket:network';
 import Buffer from 'socket:buffer';
 import { SIGNING_KEY, CLUSTER_ID, PEER_ID_MASK } from './values.js';
 import type EventEmitter from 'socket:events';
 import { setupPeerMessages, _handleMessage, pid, packetQuery } from './utils.js';
 import { Peer, RemotePeer } from 'socket:latica/index'
-
-export class User{
+ export class User{
   displayName: string;
   peer: RemotePeer;
   constructor(displayName: string, peer: RemotePeer){
@@ -130,7 +129,7 @@ async function clusterize(displayName: string, userClusterId: string, peer: Peer
   const socket = await network({ peerId, clusterId, signingKeys })
   
   const subcluster: ExtendedEventEmitter = await socket.subcluster({ sharedKey })
-  
+  /* const decryptId = await Decrytion.createDecryptId(peerId, signingKeys.privateKey, sharedKey)*/
   // I read this is important, not sure what it does
   subcluster.join();
   
@@ -201,7 +200,11 @@ export async function startClient(displayName: string, userClusterId: string){
   const client = await clusterize(displayName, userClusterId, peer);
   return client; 
 }
-
+// export async function idToName(id: string, key: string): Promise<string> {
+//   const name = await Decryption.decryptId(id, key);
+//   console.log("Decrypted name: " + name);
+//   return name;
+// }
 /*
 Final topics:
   - routing protocols, bgp etc, how routing works.

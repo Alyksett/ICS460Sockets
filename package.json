@@ -6,7 +6,9 @@
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "rsync -a --progress src/ dist/ && tsc -p . && ssc build && ssc run",
+
+        "start": "ssc build && ssc run",
+
         "peer": "rsync -a --progress --exclude socket.ini --exclude peer/ --exclude build src/ peer/src/ && cd peer && npm run start",
         "dual": "concurrently \"npm run peer\" \"npm run start\""
     },
