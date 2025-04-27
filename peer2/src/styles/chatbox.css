@@ -1,0 +1,28 @@
+#messageBox {
+    width: 400px;
+    height: 200px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: white;
+    overflow-y: auto;
+    margin-bottom: 10px;
+  }
+#messageInput {
+    width: 240px;
+    padding: 8px;
+    border: 1px solid #ccc;
+}
+#directMessage{
+  font-style: italic;
+}
+
+#logoutButtonContainer{
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+#logoutButton{
+  
+  background-color: #d82727;
+}
