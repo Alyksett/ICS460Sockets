@@ -4,7 +4,7 @@ import { SIGNING_KEY, CLUSTER_ID, PEER_ID_MASK } from './values.js';
 import type EventEmitter from 'socket:events';
 import { setupPeerMessages, _handleMessage, pid, packetQuery } from './utils.js';
 import { Peer, RemotePeer } from 'socket:latica/index'
-
+//
 export class User{
   displayName: string;
   peer: RemotePeer;
@@ -34,20 +34,36 @@ export class Client{
   peer: Peer;
   users: User[] = [];
 
-  constructor(displayName: string, peerId: any, socket: any, clusterId: any, users: User[], subcluster: any, peer: Peer){
+  constructor(displayName: string, peerId: any, socket: any, clusterId: any, subcluster: any, peer: Peer){
     this.displayName = displayName;
     this.peerId = peerId;
     this.socket = socket;
     this.clusterId = clusterId;
     this.subcluster = subcluster;
     this.peer = peer;
-    // todo: we're not actually mapping the RemotePeer and the name, since we don't have access to the client stuff.
-    // probably just need to make the client first and then re-assign these callbacks. ATM this is broken
+
+    // Initialize users from existing peers
     for(const p of this.peer.peers){
-      const newUser = new User("", p);
       if(PEER_ID_MASK.includes(p.peerId) || this.peerId === p.peerId) continue;
+      const newUser = new User(p.peerId.substring(0, 8), p);
       this.users.push(newUser);
+      console.log("Added user with id:", newUser.getId());
     }
+
+    // Listen for new peers joining
+    this.subcluster.on("#join", (newPeer: RemotePeer) => {
+      if(PEER_ID_MASK.includes(newPeer.peerId) || this.peerId === newPeer.peerId) return;
+      const user = new User(newPeer.peerId.substring(0, 8), newPeer);
+      this.users.push(user);
+      console.log("New user joined:", user.getId());
+    });
+
+    // Listen for peers leaving
+    this.subcluster.on("#leave", (peer: RemotePeer) => {
+      const peerId = peer.peerId;
+      this.users = this.users.filter(user => user.getId() !== peerId);
+      console.log("User left:", peerId);
+    });
   }
 
   
@@ -65,19 +81,12 @@ export class Client{
   }
   
   public getUserById(peerId: string): User | null {
-    PEER_ID_MASK.push(this.peerId);
-    
-    for(const u of this.users){
-      // ignore peers that are stuck in the cluster
-      if(PEER_ID_MASK.includes(u.getId())){
-        continue;
-      }
-      if(u.getId() === peerId){
-        return u;
-      }
+    const user = this.users.find(user => user.getId() === peerId);
+    if (!user) {
+      console.log("Couldn't find user with id:", peerId);
+      return null;
     }
-    console.log("client.getUserById: Couldn't find peer with id " + pid(peerId));
-    return null;
+    return user;
   }
 
   public removePeer(peerId: string): string | null{
@@ -131,12 +140,10 @@ async function clusterize(displayName: string, userClusterId: string, peer: Peer
   
   const subcluster: ExtendedEventEmitter = await socket.subcluster({ sharedKey })
   
-  // I read this is important, not sure what it does
   subcluster.join();
   
-  const client = new Client(displayName, peerId, socket, clusterId, [], subcluster, peer);
+  const client = new Client(displayName, peerId, socket, clusterId, subcluster, peer);
   
-  // connect callbacks for messages
   setupPeerMessages(client, subcluster);
 
   return client;

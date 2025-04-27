@@ -5,6 +5,7 @@ import { Packet } from 'socket:network';
 import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
 import type { RemotePeer } from 'socket:latica/index';
+import { client } from 'socket:window';
 
 
 
@@ -157,4 +158,15 @@ function _handleLeave(client: Client, subcluster: any, peer: any){
     return;
   }
   addMessageToChat(`${leftPeerName} has left the chat.`);
+}
+
+// When someone tells us "This is my display name"
+const _recSendName = async (message: any) => {
+  // Update the user's display name in the client
+  const resolvedUser = client.getUserById(message.id);
+  if (resolvedUser) {
+    resolvedUser.setName(message.name);
+    console.log("Updated display name for user: " + message.name);
+  }
+  console.log("Mapped pid " + pid(message.id) + " with display name: " + message.name);
 }

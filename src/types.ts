@@ -11,4 +11,7 @@ export class Message{
         this.ip = ip;
         this.port = port;
     }
+
+
 }
+
