@@ -45,28 +45,28 @@ export class Client{
       this.subcluster = subcluster;
       this.peer = peer;
   
-    //   // Initialize users from existing peers
-    //   for(const p of this.peer.peers){
-    //     if(PEER_ID_MASK.includes(p.peerId) || this.peerId === p.peerId) continue;
-    //     const newUser = new User(p.peerId.substring(0, 8), p);
-    //     this.users.push(newUser);
-    //     console.log("Added user with id:", newUser.getId());
-    //   }
+      // Initialize users from existing peers
+      for(const p of this.peer.peers){
+        if(PEER_ID_MASK.includes(p.peerId) || this.peerId === p.peerId) continue;
+        const newUser = new User(p.peerId.substring(0, 8), p);
+        this.users.push(newUser);
+        console.log("Added user with id:", newUser.getId());
+      }
   
-    //   // Listen for new peers joining
-    //   this.subcluster.on("#join", (newPeer: RemotePeer) => {
-    //     if(PEER_ID_MASK.includes(newPeer.peerId) || this.peerId === newPeer.peerId) return;
-    //     const user = new User(newPeer.peerId.substring(0, 8), newPeer);
-    //     this.users.push(user);
-    //     console.log("New user joined:", user.getId());
-    //   });
+      // Listen for new peers joining
+      this.subcluster.on("#join", (newPeer: RemotePeer) => {
+        if(PEER_ID_MASK.includes(newPeer.peerId) || this.peerId === newPeer.peerId) return;
+        const user = new User(newPeer.peerId.substring(0, 8), newPeer);
+        this.users.push(user);
+        console.log("New user joined:", user.getId());
+      });
   
-    //   // Listen for peers leaving
-    //   this.subcluster.on("#leave", (peer: RemotePeer) => {
-    //     const peerId = peer.peerId;
-    //     this.users = this.users.filter(user => user.getId() !== peerId);
-    //     console.log("User left:", peerId);
-    //   });
+      // Listen for peers leaving
+      this.subcluster.on("#leave", (peer: RemotePeer) => {
+        const peerId = peer.peerId;
+        this.users = this.users.filter(user => user.getId() !== peerId);
+        console.log("User left:", peerId);
+      });
     }
   
     
