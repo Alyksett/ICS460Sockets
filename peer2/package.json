@@ -8,7 +8,7 @@
     
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "xcopy /E /Y src\\ dist\\ && tsc -p . && ssc build && ssc run",
+        "start": "rsync -a --progress src/ dist/ && tsc -p . && ssc build && ssc run",
         "peer": "xcopy /E /Y src\\ peer\\src\\ && cd peer && npm run start",
         "peer2": "xcopy /E /Y src\\ peer2\\src\\ && cd peer2 && npm run start",
         "dual": "concurrently \"npm run peer\" \"npm run start\"",
@@ -27,7 +27,6 @@
     "homepage": "https://github.com/Alyksett/ICS460Sockets#readme",
     "dependencies": {
         "@socketsupply/socket": "^0.6.0-rc.8",
-        "@socketsupply/socket-win32-x64": "^0.6.0-rc.5",
         "@types/node": "^22.14.1",
         "dgram": "^1.0.1",
         "typescript": "^5.8.3"
