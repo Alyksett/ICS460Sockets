@@ -1,10 +1,9 @@
-import { Client, User } from './handler.js';
+import { Client, User } from './types.js';
 import { addMessageToChat } from './index.js';
 import Buffer from 'socket:buffer';
 import { Packet } from 'socket:network';
 import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
-import type { RemotePeer } from 'socket:latica/index';
 import { client } from 'socket:window';
 
 
@@ -25,6 +24,22 @@ export async function packetQuery(query: any){
   return p
 }
 
+export async function packetQueryTest(query: any, peer: any){
+  // I copied all this from the source code and it works
+  // They don't really make it clear what usr1/2/3 are but... it works?
+  const packet = new PacketQuery({
+    message: {requesterPeerId: "-1", message:"test"},
+    usr1: Buffer.from(String(Date.now())),
+    usr3: Buffer.from(randomBytes(32)),
+    usr4: Buffer.from(String(1)),
+    clusterId:Buffer.from(peer.clusterId)
+  })
+  // also don't know why we're encoding and decoding
+  const data = await Packet.encode(packet)
+  const p = Packet.decode(data)
+
+  return p
+}
 
 export function pid(peerId: string){
   return peerId.substring(0, 8);

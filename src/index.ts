@@ -1,5 +1,5 @@
-import { Client, startClient, User } from './handler.js'
-import { pid } from './utils.js';
+import { startClient } from './handler.js'
+import { Client, User } from './types.js';
 
 document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
   console.log("Login form submitted");
@@ -29,7 +29,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   // (window as any).utilityButton = () => utilityButton(client);
   console.log("Client initialized");
   
-  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${pid(client.peer.peerId)}`;
+  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client.peer.peerId).substring(0, 8)}`;
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
 
@@ -43,17 +43,14 @@ function getDirectMessageUser(client: Client): User | null{
   }	
   const selectedOption = selectElement.options[selectElement.selectedIndex];
   let recipient = null;
-  for(const remotePeer of client.getPeers()){
-    const resolvedUser: User | null = client.getUserById(remotePeer.peerId);
-    if(!resolvedUser){
-      console.error("Couldn't find user with id: " + remotePeer.peerId);
-      continue;
-    }
+  for(const resolvedUser of client.getPeers()){
+
     if(resolvedUser.displayName === selectedOption.textContent){
       recipient = resolvedUser
     }
   }
   if(!recipient){
+    console.log(`Couldn't find username ${selectedOption.textContent} in stored list of connected peers.`)
     return null;
   }
   return recipient;
