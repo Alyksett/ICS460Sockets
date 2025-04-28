@@ -1,11 +1,12 @@
 import { network, Encryption } from 'socket:network'
-import Buffer from 'socket:buffer';
+import { Buffer } from 'socket:buffer'
 import { SIGNING_KEY, CLUSTER_ID, PEER_ID_MASK, strangePeers } from './values.js';
 import type EventEmitter from 'socket:events';
 import { setupPeerMessages, _handleMessage, pid, packetQuery, packetQueryTest } from './utils.js';
 import { Packet, Peer, RemotePeer } from 'socket:latica/index'
 import * as sock from 'socket:dgram'
 import { addMessageToChat } from './index.js';
+import { rand64 } from 'socket:crypto';
 
 export class User{
   displayName: string;
@@ -52,7 +53,7 @@ export class Client{
       if(PEER_ID_MASK.includes(p.peerId) || this.peerId === p.peerId) continue;
       this.users.push(newUser);
     }
-
+    (this.peer as any).onQuery()
     this.peer.socket.on("util", (msg: any) => {console.log(msg)})
     this.peer.socket.on("newPeer", (newPeer: any) => {
       this.connectedPeers.push(newPeer);
@@ -141,8 +142,22 @@ export class Client{
     return this.connectedPeers
   }
 
-  public getConnectedPeers(): RemotePeer[]{
-    return this.connectedPeers
+  public async getPeersExcept(peer: any){
+    const connected = await this.getConnectedPeers();
+    const final = []
+    for(const p of connected){
+      if(p.peerId!=peer.peerId){
+        final.push(p)
+      }
+    }
+    return final;
+  }
+
+  public async getConnectedPeers(): Promise<RemotePeer[]>{
+    const _testPacket = await packetQueryTest("test", this.peer)
+    strangePeers.push(this.peer)
+    const peers = this.peer.getPeers(_testPacket, this.peer.peers, strangePeers);
+    return peers;
   }
 
   public getPeerbyId(id: string){
@@ -156,19 +171,30 @@ export class Client{
   }
 
   public async sendDirectMessage(message: any, rec: RemotePeer){
-    const packagedMessage = Buffer.from(JSON.stringify({ message: message, peer: await this.peer.getInfo() }));
+    console.log("Handling sendDirectMessage")
+    // const packagedMessage = Buffer.from(JSON.stringify({ message: message, packetId: 123,  type: 8, peer: await this.peer.getInfo() }));
     // this.peer.socket.connect(rec.port, rec.address, (err: any) => {
-    //   console.log("Callback error: " + err);
+    //   console.log("Callback esrror: " + err);
     //   this.peer.socket.send("directMessage", packagedMessage);
       
     // })
-    this.peer.socket.send(packagedMessage, 0, packagedMessage.length, rec.port, rec.address, (err: any) => {
-      if(err){
-        console.log("Error: " + err)
-      }
-      console.log("message has been sent.")
-    })
-    // this.peer.socket.send()
+    const testPacket = await packetQuery("directMessage", this.peer);
+    const buf = await Packet.encode(testPacket);
+    // const t = Packet.decode(testPacket)
+        // const buf: Buffer = (await Packet.encode(t)) as Buffer;
+    // const b = Buffer(t, 0, packagedMessage.length);
+    
+
+    (this.peer as any).send(buf, rec.port, rec.address);
+    
+
+    // this.peer.socket.send(packagedMessage, 0, packagedMessage.length, rec.port, rec.address, (err: any) => {
+    //   if(err){
+    //     console.log("Error: " + err)
+    //   }
+    //   console.log("message has been sent.")
+    // })
+    
   }
 
   public sendMessage(message: any){
@@ -218,15 +244,29 @@ async function peerize(displayName: string, userClusterId: string){
   // When the peer is initialized this is executed
   await peer.init(() => {console.log("Peer is initialized")})
 
+
+  // peer.socket.on("message", (msg: any, rinfo: any) => {
+  //   try {
+  //     const json = msg.toString();
+  //     console.log('Parsed JSON:', json);
+  //   } catch (err) {
+  //     console.error('Failed to parse JSON:', err);
+  //   }
+  // })
+  
+  
+
   // When someone tells us "Send me your display name"
-  const _recGetName = async () => {
+  const _recGetName = async (ignoreList: any[]) => {
     // construct the "message" field in the packet (Note this is the same  structure we're parsing before)
     const message = {"operation":"sendName", "name": displayName, "address":peer.address, "port":peer.port, "id":peer.peerId}
+
     // construct the actual socketsupply PacketQuery
     const packet = await packetQuery(message, peer)
     console.log("Sending name back");
+    
     // send the packet *to the network*. Ideally we'd send it to the person who asked, but that's not working yet.
-    peer.query(packet);
+    peer.mcast(packet);
   }
 
   // When someone tells us "This is my display name"
@@ -235,21 +275,39 @@ async function peerize(displayName: string, userClusterId: string){
     // probably just need to make the client first and then re-assign these callbacks
     console.log("Mapped pid " + pid(message.id) + " with display name: " + message.name)
   }
-
+  
+  // peer._onQuery  = (packet: any, port: any, address: any) => {console.log("kms")};
+  
   // When we (as in Peer) receive a PacketQuery
-  (peer as any).onQuery = async (packet: any ) => {
-    // get the "message" field of the packet
-    // When we construct the PacketQuery in utils/_handleLogin, WE set this message field with some 
-    // information (ex: login)
-    const json = packet.message
-    const operation = json.operation
-    // Match the operation someone else using our program sent
-    switch (operation){
-      case "getName": await _recGetName();break; // They told us "Send me your display name"
-      case "sendName": await _recSendName(json);break; // They told us "Here's my display name"
-      default: console.log("Couldn't match operation: " + operation);
+  (peer as any).onQuery = async function (packet: any) {
+    console.log("Got packet query");
+    const operation = packet.operation;
+    console.log("Matching on operation: " + operation);
+    
+    // const _testPacket = await packetQueryTest("test", this.peer)
+    // strangePeers.push(this.peer)
+    // const connected = this.peer.getPeers(_testPacket, this.peer.peers, strangePeers);
+  
+    // const ignoreList = []
+    // for(const p of connected){
+    //   if(p.peerId!=peer.peerId){
+    //     ignoreList.push(p)
+    //   }
+    // }
+
+
+    switch (operation) {
+      case "getName":
+        await _recGetName([]);
+        break;
+      case "sendName":
+        await _recSendName(packet);
+        break;
+      default:
+        console.log("Couldn't match operation: " + operation);
     }
   }
+  
 
   // If the peer/socketsupply has any errors internally then we log it to console
   peer._onError = (err: any) => {console.log("_onError: " + err)}; 

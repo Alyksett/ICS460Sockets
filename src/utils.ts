@@ -5,6 +5,7 @@ import { Packet } from 'socket:network';
 import { PacketPing, PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
 import type { Peer, RemotePeer } from 'socket:latica/index';
+import type { Socket } from 'socket:dgram';
 
 export async function packetQueryTest(query: any, peer: any){
   // I copied all this from the source code and it works
@@ -134,9 +135,9 @@ async function _handleJoin(client: Client, subcluster: any, newPeer: any){
   
   // use util funtion to construct a socketsupply PacketQuery
   const packet = await packetQuery(message, client.peer)
+  const ignores = await client.getConnectedPeers();
   client.peer.addIndexedPeer(newPeer);
-  // send this packet to the network (and eventually the new peer will get it and respond to us)
-  client.peer.socket.emit("newPeer", newPeer)
+  (client.peer as Peer).mcast(packet, ignores);
 }
 
 function _requestName(client: Client, subcluster: any, requesterMessage: any){
