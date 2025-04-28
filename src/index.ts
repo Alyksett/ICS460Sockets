@@ -65,8 +65,8 @@ function utilityButton(client: Client){
 function handleLogout(client: Client){
   client.handleShutdown();
   // TODO: REMOVE THIS
-  // (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
-  // (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
+  (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
+  (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
 
 function sendMessage(client: Client) {
