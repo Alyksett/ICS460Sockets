@@ -1,6 +1,8 @@
 import { startClient } from './handler.js'
 import { Client, User } from './types.js';
 
+
+
 document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
   console.log("Login form submitted");
   event.preventDefault();
@@ -21,8 +23,9 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   }
 
   (window as any).sendMessage = () => sendMessage(client);
-  (window as any).sendMessageEnter = () => sendMessageEnter(client);
   
+  const messageInput = document.getElementById("messageInput") as HTMLInputElement;
+  messageInput.addEventListener("keyup", (event) => handleEnterKey(event, client));
 
   (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
   (window as any).handleLogout = () => handleLogout(client);
@@ -185,15 +188,11 @@ function populateDirectMessageSelect(client: Client){
 
 }
  
-function sendMessageEnter( client: Client) { 
-  const inputElement = document.getElementById("messageInput") as HTMLInputElement;
-  inputElement.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault(); // Prevent the default action (e.g., form submission)
-      console.log("Enter key pressed!");
-      // Call your sendMessage function here
-      sendMessage(client);
-    }
-  });
-   
- }
+// Define the event handler outside the function to maintain the same reference
+function handleEnterKey(event: KeyboardEvent, client: Client) {
+  if (event.key === "Enter") {
+    event.preventDefault(); // Prevent the default action (e.g., form submission)
+    console.log("Enter key pressed!");
+    sendMessage(client); // Call your sendMessage function here
+  }
+}
