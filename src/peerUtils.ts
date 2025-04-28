@@ -3,7 +3,7 @@
 // }
 
 import { Peer, Packet } from "socket:latica/index"
-// import { User } from "./types";
+import { Client } from "./types";
 import Buffer from 'socket:buffer';
 import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
@@ -25,7 +25,7 @@ async function packetQuery(query: any){
   return p
 }
 
-export async function initializeCallbacks(peer: Peer, client: any){
+export async function initializeCallbacks(peer: Peer, client: Client){
   const _recGetName = async () => {
     // construct the "message" field in the packet (Note this is the same  structure we're parsing before)
     const message = {"operation":"sendName", "name": client.displayName, "address":peer.address, "port":peer.port, "id":peer.peerId}
@@ -40,9 +40,11 @@ export async function initializeCallbacks(peer: Peer, client: any){
   const _recSendName = async (message: any) => {
     // todo: we're not actually mapping the RemotePeer and the name, since we don't have access to the client stuff.
     // probably just need to make the client first and then re-assign these callbacks
+    console.log(message);
+    const pid = message.id;
     console.log("Mapped pid " + (message.id).substring(0, 5) + " with display name: " + message.name)
-    // const user = new User(message.name, message.peer)
-    // client.users.push(user);
+    const remotePeer = peer.getPeer(pid);
+    client.addPeer(message.name, remotePeer);
   }
 
   // When we (as in Peer) receive a PacketQuery

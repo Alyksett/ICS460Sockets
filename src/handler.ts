@@ -9,7 +9,7 @@ import type EventEmitter from 'socket:events';
 export type ExtendedEventEmitter = EventEmitter & {
   [key: string]: any; // Allows arbitrary properties
 };
-async function clusterize(displayName: string, userClusterId: string, peer: Peer){
+async function clusterize(displayName: string, userClusterId: string, peer: Peer): Promise<Client>{
   console.log("Starting cluster client...");
   
   const peerId = await Encryption.createId(peer.peerId)

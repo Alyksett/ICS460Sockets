@@ -69,7 +69,11 @@ export class Client{
       });
     }
   
-    
+    public addPeer(name: string, remotePeer: RemotePeer){
+      const newUser = new User(name, remotePeer);
+      this.users.push(newUser);
+    }
+
     public utility(){
       console.log("===============================================");
       console.log("My Peer ID: " + (this.peerId.substring(0, 5)));
