@@ -11,17 +11,13 @@ export type ExtendedEventEmitter = EventEmitter & {
 };
 async function clusterize(displayName: string, userClusterId: string, peer: Peer): Promise<Client>{
   console.log("Starting cluster client...");
-  
   const peerId = await Encryption.createId(peer.peerId)
   const signingKeys = await Encryption.createKeyPair(SIGNING_KEY)
-
   const clusterId = await Encryption.createClusterId(userClusterId)
   const sharedKey = await Encryption.createSharedKey(CLUSTER_ID)
 
-  const socket = await network({ peerId, clusterId, signingKeys })
-  
+  const socket = await network({ peerId, clusterId, signingKeys })  
   const subcluster: ExtendedEventEmitter = await socket.subcluster({ sharedKey })
-  
   subcluster.join();
   
   const client = new Client(displayName, peerId, socket, clusterId, subcluster, peer);
@@ -55,11 +51,8 @@ async function peerize(displayName: string, userClusterId: string){
 }
 
 export async function startClient(displayName: string, userClusterId: string){
-  console.log("initializeCallbacks")
   const peer = await peerize(displayName, userClusterId);
-  console.log("initializeCallbacks")
   const client = await clusterize(displayName, userClusterId, peer);
-  console.log("initializeCallbacks")
   await initializeCallbacks(peer, client);
   return client; 
 }

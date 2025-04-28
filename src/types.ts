@@ -45,22 +45,6 @@ export class Client{
       this.subcluster = subcluster;
       this.peer = peer;
   
-      // Initialize users from existing peers
-      for(const p of this.peer.peers){
-        if(PEER_ID_MASK.includes(p.peerId) || this.peerId === p.peerId) continue;
-        const newUser = new User(p.peerId.substring(0, 8), p);
-        this.users.push(newUser);
-        console.log("Added user with id:", newUser.getId());
-      }
-  
-      // Listen for new peers joining
-      this.subcluster.on("#join", (newPeer: RemotePeer) => {
-        if(PEER_ID_MASK.includes(newPeer.peerId) || this.peerId === newPeer.peerId) return;
-        const user = new User(newPeer.peerId.substring(0, 8), newPeer);
-        this.users.push(user);
-        console.log("New user joined:", user.getId());
-      });
-  
       // Listen for peers leaving
       this.subcluster.on("#leave", (peer: RemotePeer) => {
         const peerId = peer.peerId;
@@ -124,7 +108,10 @@ export class Client{
     public sendDirectMessage(message: any, recipient: User){
       const packagedMessage = Buffer.from(JSON.stringify({ message: message, peer: this.peerId, author: this.displayName }));
       const recipientId = recipient.peer.peerId;
-      this.subcluster.emit("directMessage", packagedMessage);
+      const port = recipient.peer.port;
+      const address = recipient.peer.address;
+      console.log("Sending direct message to peer: " + recipientId.substring(0, 4))
+      this.peer.socket.emit(Buffer.from("Hey man"), port, address);
     }
   
     public sendMessage(message: any){

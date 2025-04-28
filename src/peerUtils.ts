@@ -1,9 +1,5 @@
-// export async function initializeCallbacks(peer: any, client: any){
-//     console.log("intitted");
-// }
-
 import { Peer, Packet } from "socket:latica/index"
-import { Client } from "./types";
+import { Client } from "./types.js";
 import Buffer from 'socket:buffer';
 import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
