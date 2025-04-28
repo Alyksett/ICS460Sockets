@@ -54,6 +54,10 @@ export class Client{
     }
   
     public addPeer(name: string, remotePeer: RemotePeer){
+      const isPeerAdded: boolean = this.users.reduce((acc: boolean, u:User) => {return u.displayName===name}, false);
+      if(isPeerAdded){
+        return;
+      }
       const newUser = new User(name, remotePeer);
       this.users.push(newUser);
     }
