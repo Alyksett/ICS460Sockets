@@ -5,6 +5,44 @@ import { Peer } from 'socket:latica/index'
 import { Client } from './types.js';
 import { initializeCallbacks } from './peerUtils.js';
 import type EventEmitter from 'socket:events';
+import { encryptName } from './encryption.js';
+// import { Buffer } from 'socket:buffer';
+// import { AES256GCM } from './encryption.js'
+
+function nameToId(name: string, key: string): string {
+  console.log("here")
+  const thing = encryptName(name, key)
+
+  // const AES = new AES256GCM();
+  // const encrypted = AES.encrypt(name, key);
+  // console.log("encrypted: " + encrypted);
+  // const decrypted = AES.decrypt(
+  //   encrypted.ciphertext,
+  //   key,
+  //   encrypted.iv,
+  //   encrypted.tag
+  // )
+  // console.log("Decryptor: " + decrypted)
+
+  // console.log("Start: " + name);
+  // console.log("ID: " + encrypted.ciphertext);
+  // console.log("decrypy: " + decrypted);
+  return "decrypted"
+  // return ""
+  
+}
+
+// function idToName(id: string, key: string): string {
+//   const bytes = crypto.AES.decrypt(id, key);
+//   const decrypted = bytes.toString(crypto.enc.Utf8);
+//   return decrypted;
+// }
+// import { randomBytes } from 'socket:crypto';
+// import { createCipheriv } from 'crypto';
+
+// import { createCipheriv, randomBytes } from 'crypto';
+// import { nameToId } from './encryption.js';
+
 
 export type ExtendedEventEmitter = EventEmitter & {
   [key: string]: any; // Allows arbitrary properties
@@ -29,9 +67,15 @@ async function clusterize(displayName: string, userClusterId: string, peer: Peer
 
 async function peerize(displayName: string, userClusterId: string){
   
-  const id = await Encryption.createId(displayName);
   const clusterId = await Encryption.createClusterId(userClusterId)
+  // const id = await Encryption.createId(displayName);
+  console.log("Starting...");
 
+  const id = nameToId(displayName, clusterId.toString());
+  console.log("HER ID: " + id);
+  // console.log("Generated ID: " + id);
+  // const name = idToName(id, Buffer.from(id));
+  // console.log("Deconstructed buffer: " + name);
   // Create a new peer, dgram is the module that has the function to create
   // a new socket (the Peer constructor will do this internally)
   

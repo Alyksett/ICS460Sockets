@@ -4,6 +4,7 @@ import Buffer from 'socket:buffer';
 import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
 
+
 async function packetQuery(query: any){
   // I copied all this from the source code and it works
   // They don't really make it clear what usr1/2/3 are but... it works?
@@ -58,6 +59,5 @@ export async function initializeCallbacks(peer: Peer, client: Client){
     }
   }
 }
-
 
 
