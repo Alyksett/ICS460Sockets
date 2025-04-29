@@ -21,7 +21,7 @@ if(SKIP_LOGIN){
       console.error("Error starting client:", error);
     }
   
-    (window as any).sendMessage = () => sendMessage(client);
+    (window as any).sendMessage = async () => await sendMessage(client);
     
     const messageInput = document.getElementById("messageInput") as HTMLInputElement;
     messageInput.addEventListener("keyup", (event) => handleEnterKey(event, client));
@@ -55,7 +55,7 @@ if(SKIP_LOGIN){
       return;
     }
   
-    (window as any).sendMessage = () => sendMessage(client);
+    (window as any).sendMessage = async () => await sendMessage(client);
     
     const messageInput = document.getElementById("messageInput") as HTMLInputElement;
     messageInput.addEventListener("keyup", (event) => handleEnterKey(event, client));
@@ -106,7 +106,7 @@ function handleLogout(client: Client){
   (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
 
-function sendMessage(client: Client) {
+async function sendMessage(client: Client) {
   const inputElement = document.getElementById("messageInput") as HTMLInputElement;
   let inputValue = "";
   if (inputElement) {
@@ -132,7 +132,8 @@ function sendMessage(client: Client) {
       return;
     }
     addMessageToChat(`You to ${recipient.displayName}: ` + inputValue, true);
-    client.sendDirectMessage(inputValue, recipient);
+
+    await client.sendDirectMessage(inputValue, recipient.peer);
     return;
   }
   

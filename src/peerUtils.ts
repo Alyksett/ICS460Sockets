@@ -3,6 +3,7 @@ import { Client } from "./types.js";
 import Buffer from 'socket:buffer';
 import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
+import { addMessageToChat } from "./index.js";
 
 async function packetQuery(query: any){
   // I copied all this from the source code and it works
@@ -39,8 +40,17 @@ export async function initializeCallbacks(peer: Peer, client: Client){
     console.log(message);
     const pid = message.id;
     console.log("Mapped pid " + (message.id).substring(0, 5) + " with display name: " + message.name)
-    const remotePeer = peer.getPeer(pid);
+    const remotePeer = {"peerId":message.id, "address":message.address, "port":message.port}
     client.addPeer(message.name, remotePeer);
+  }
+
+  const _handleDirectMessage = async (message: any) => {
+    console.log(message);
+    
+    const author = client.getUserById(message.peerId)?.displayName
+    const formatted = `Direct from ${author}: ${message.message}`
+    addMessageToChat(formatted, true)
+    
   }
 
   // When we (as in Peer) receive a PacketQuery
@@ -51,9 +61,12 @@ export async function initializeCallbacks(peer: Peer, client: Client){
     const json = packet.message
     const operation = json.operation
     // Match the operation someone else using our program sent
+    console.log("Handling operation: " + operation);
+    
     switch (operation){
       case "getName": await _recGetName();break; // They told us "Send me your display name"
       case "sendName": await _recSendName(json);break; // They told us "Here's my display name"
+      case "directMessage": await _handleDirectMessage(json);break; // They told us "Here's my display name"
       default: console.log("Couldn't match operation: " + operation);
     }
   }
