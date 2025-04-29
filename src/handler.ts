@@ -5,7 +5,7 @@ import { Peer } from 'socket:latica/index'
 import { Client } from './types.js';
 import { initializeCallbacks } from './peerUtils.js';
 import type EventEmitter from 'socket:events';
-
+import dgram from 'socket:dgram';
 export type ExtendedEventEmitter = EventEmitter & {
   [key: string]: any; // Allows arbitrary properties
 };
@@ -35,7 +35,6 @@ async function peerize(displayName: string, userClusterId: string){
   // Create a new peer, dgram is the module that has the function to create
   // a new socket (the Peer constructor will do this internally)
   
-  const dgram = require('dgram');
   const peer = new Peer({"peerId":id, clusterId: clusterId}, dgram)
   
   // When the peer is initialized this is executed

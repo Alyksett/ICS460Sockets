@@ -1,9 +1,10 @@
 import type { RemotePeer, Peer } from "socket:latica";
-
-import Buffer from 'socket:buffer';
 import type EventEmitter from "socket:events";
 // import { PEER_ID_MASK } from './values.js';
-
+import Buffer from 'socket:buffer';
+import { PacketQuery } from 'socket:latica/packets';
+import { randomBytes } from 'socket:crypto';
+import { Packet } from 'socket:network';
 
 const PEER_ID_MASK: string[] = []
 
@@ -11,7 +12,21 @@ type ExtendedEventEmitter = EventEmitter & {
   [key: string]: any; // Allows arbitrary properties
 };
 
+async function packetQuery(query: any){
+  // I copied all this from the source code and it works
+  // They don't really make it clear what usr1/2/3 are but... it works?
+  const packet = new PacketQuery({
+    message: query,
+    usr1: Buffer.from(String(Date.now())),
+    usr3: Buffer.from(randomBytes(32)),
+    usr4: Buffer.from(String(1))
+  })
+  // also don't know why we're encoding and decoding
+  const data = await Packet.encode(packet)
+  const p = Packet.decode(data)
 
+  return p
+}
 
 export class User{
   displayName: string;
@@ -115,7 +130,15 @@ export class Client{
       const port = recipient.peer.port;
       const address = recipient.peer.address;
       console.log("Sending direct message to peer: " + recipientId.substring(0, 4))
-      this.peer.socket.emit(Buffer.from("Hey man"), port, address);
+      const msg = {
+        "operation":"directMessage",
+        "address":this.peer.address,
+        "port":this.peer.port,
+        "peerId":this.peerId,
+        "message":message
+      }
+      const packet = packetQuery(msg)
+      this.peer.mcast(packet,[]);
     }
   
     public sendMessage(message: any){
