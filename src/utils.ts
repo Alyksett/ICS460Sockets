@@ -4,6 +4,7 @@ import Buffer from 'socket:buffer';
 import { Packet } from 'socket:network';
 import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
+import { ref } from 'process';
 
 
 
@@ -103,7 +104,8 @@ function _handleDirectMessageSocket(client: Client, subcluster: any, message: an
 export function _handleMessage(client: Client, subcluster: any, message: any){
   console.log("==================Handling message================");
   const parsedMessage = JSON.parse(message.toString());
-  const messageContent = parsedMessage.message;
+  const messageContent = parsedMessage.message; 
+  client.users.push(new User(parsedMessage.author, parsedMessage.peer)); //ahmed delete this if it does not solve the list of users 
   const messagePeer = parsedMessage.peer;
   const messageAuthor = parsedMessage.author;
   if(messagePeer === client.peerId){
@@ -159,7 +161,10 @@ function _resolveName(client: Client, subcluster: any, peerMessage: any){
     console.error(`Peer with id: ${pid(peerId)} not found in subcluster`);
     return;
   }
+  client.users.push(resolvedUser); //this line also resolves the list of users in the selection in the HTNL list 
+  // This is the part where we set the name of the peer in our client
   resolvedUser.setName(peerName);
+  //call the function to add the list of users to the HTML list
   
   addMessageToChat(`${peerName} has joined the chat.`);
 }

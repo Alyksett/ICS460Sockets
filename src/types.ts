@@ -49,11 +49,30 @@ export class Client{
       this.subcluster.on("#leave", (peer: RemotePeer) => {
         const peerId = peer.peerId;
         this.users = this.users.filter(user => user.getId() !== peerId);
+ 
         console.log("User left:", peerId);
       });
+     this.subcluster.on("name", (data: Buffer, peer: RemotePeer) => {
+        try {
+          const { displayName, peerId } = JSON.parse(data.toString());
+      
+          // Don't add yourself
+          if (peerId === this.peerId) return;
+      
+          console.log("Received name event from:", displayName, peerId);
+      
+         this.addPeer(displayName, peer); // This adds it to client.users
+      
+        } catch (err) {
+          console.error("Failed to parse name event:", err);
+        }
+      });
+      
     }
   
     public addPeer(name: string, remotePeer: RemotePeer){
+      console.log(`Adding peer: ${name} (${remotePeer.peerId})`);
+
       const isPeerAdded: boolean = this.users.reduce((acc: boolean, u:User) => {return u.displayName===name}, false);
       if(isPeerAdded){
         return;
@@ -66,7 +85,7 @@ export class Client{
       console.log("===============================================");
       console.log("My Peer ID: " + (this.peerId.substring(0, 5)));
       const safePeers = this.peer.peers.filter((p: RemotePeer) => !PEER_ID_MASK.includes(p.peerId));
-      console.log("Safe Peers: " + JSON.stringify(safePeers.map((p: RemotePeer) => p.peerId), null, 2));
+      // console.log("Safe Peers: " + JSON.stringify(safePeers.map((p: RemotePeer) => p.peerId), null, 2));
       console.log("===============================================");
     }
   

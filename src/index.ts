@@ -9,6 +9,8 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   const displayName = (document.getElementById('displayName') as HTMLInputElement).value;
   const clusterId = (document.getElementById('clusterId') as HTMLInputElement).value;
   const messageType = (document.getElementById('sendMessageType') as HTMLInputElement);
+  document.getElementById('peerListContainer')!.style.display = 'block';
+
   console.log(messageType);
 
   let client: Client;
@@ -16,7 +18,8 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   try {
     console.log("Starting client...");
     client = await startClient(displayName, clusterId);
-    console.log("Client started successfully");
+    
+     console.log("Client started successfully");
   } catch (error) {
     console.error("Error starting client:", error);
     return;
@@ -35,6 +38,9 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client.peer.peerId).substring(0, 8)}`;
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
+  refreshPeerList(client); //to refresh the peer list
+setInterval(() =>{} , 5000); // every 5 seconds
+  setInterval(() => refreshPeerList(client), 5000); // every 5 seconds
 
 });
 
@@ -110,6 +116,7 @@ function sendMessage(client: Client) {
   }
   inputElement.value = "";  // Clear the input field
 }
+
 
 export function addMessageToChat(message: string, directMessage: boolean = false) {
   console.log("Adding message to chat: " + message + " directMessage: " + directMessage);
@@ -195,4 +202,38 @@ function handleEnterKey(event: KeyboardEvent, client: Client) {
     console.log("Enter key pressed!");
     sendMessage(client); // Call your sendMessage function here
   }
+}
+ function refreshPeerList(client: Client) {
+
+
+  const list = document.getElementById('peerList') as HTMLUListElement;
+  if (!list) return;
+
+  list.innerHTML = '';
+  const peers = client.users.filter(user => user.getId() !== client.peer.peerId);
+
+  if (peers.length === 0) {
+    console.log("///////////////////////////////////////////////////")
+    console.log("client.users:", client.getPeers());
+
+    console.log("No peers online");
+    console.log("///////////////////////////////////////////////////")
+
+    const li = document.createElement('li');
+    li.textContent = 'No peers online';
+    list.appendChild(li);
+    return;
+  }
+
+
+  peers.forEach((user: User) => {
+    const li = document.createElement('li');
+    li.textContent = `${user.displayName} (${user.getId().substring(0, 8)})`;
+    list.appendChild(li);
+  });
+  console.log("///////////////////////////////////////////////////")
+  console.log("Refreshing peer list is called");
+  console.log("the lis tis. ", list);
+  console.log("///////////////////////////////////////////////////")
+ 
 }

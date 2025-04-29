@@ -51,8 +51,17 @@ async function peerize(displayName: string, userClusterId: string){
 }
 
 export async function startClient(displayName: string, userClusterId: string){
+
   const peer = await peerize(displayName, userClusterId);
   const client = await clusterize(displayName, userClusterId, peer);
+  // Emit the name event to the subcluster
+  // This is used to send the display name to the other peers in the cluster
+
+  client.subcluster.emit("name", JSON.stringify({
+    peerId: client.peerId, // this is the peerId
+    displayName: client.displayName // this is the display name
+  }));
+  
   await initializeCallbacks(peer, client);
   return client; 
 }
