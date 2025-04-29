@@ -3,6 +3,7 @@ import { Client } from "./types.js";
 import Buffer from 'socket:buffer';
 import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
+import { refreshPeerList, populateDirectMessageSelect } from "./index.js";
 
 async function packetQuery(query: any){
   // I copied all this from the source code and it works
@@ -41,6 +42,8 @@ export async function initializeCallbacks(peer: Peer, client: Client){
     console.log("Mapped pid " + (message.id).substring(0, 5) + " with display name: " + message.name)
     const remotePeer = peer.getPeer(pid);
     client.addPeer(message.name, remotePeer);
+    refreshPeerList(client);
+    populateDirectMessageSelect(client);  
   }
 
   // When we (as in Peer) receive a PacketQuery
