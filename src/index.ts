@@ -112,7 +112,7 @@ function getDirectMessageOptions(client: Client): string[] {
   return peerNames.length > 0 ? peerNames : ["No users online"];
 }
 
-function populateDirectMessageSelect(client: Client) {
+export function populateDirectMessageSelect(client: Client) {
   const select = document.getElementById('directMessageSelect');
   if (!select) return;
 
@@ -134,7 +134,7 @@ function handleEnterKey(event: KeyboardEvent, client: Client) {
   }
 }
 
-function refreshPeerList(client: Client) {
+export function refreshPeerList(client: Client) {
   const list = document.getElementById('peerList') as HTMLUListElement;
   if (!list) return;
 
