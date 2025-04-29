@@ -1,211 +1,140 @@
-import { startClient } from './handler.js'
+import { startClient } from './handler.js';
 import { Client, User } from './types.js';
 
-
-
 document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
-  console.log("Login form submitted");
   event.preventDefault();
+  console.log("Login form submitted");
+
   const displayName = (document.getElementById('displayName') as HTMLInputElement).value;
   const clusterId = (document.getElementById('clusterId') as HTMLInputElement).value;
-  const messageType = (document.getElementById('sendMessageType') as HTMLInputElement);
-  document.getElementById('peerListContainer')!.style.display = 'block';
 
-  console.log(messageType);
+  document.getElementById('peerListContainer')!.style.display = 'block';
 
   let client: Client;
 
   try {
     console.log("Starting client...");
     client = await startClient(displayName, clusterId);
-    
-     console.log("Client started successfully");
+    console.log("Client started successfully");
   } catch (error) {
     console.error("Error starting client:", error);
     return;
   }
 
   (window as any).sendMessage = () => sendMessage(client);
-  
+  (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
+  (window as any).handleLogout = () => handleLogout(client);
+
   const messageInput = document.getElementById("messageInput") as HTMLInputElement;
   messageInput.addEventListener("keyup", (event) => handleEnterKey(event, client));
 
-  (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
-  (window as any).handleLogout = () => handleLogout(client);
-  // (window as any).utilityButton = () => utilityButton(client);
-  console.log("Client initialized");
-  
   (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client.peer.peerId).substring(0, 8)}`;
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
-  refreshPeerList(client); //to refresh the peer list
-setInterval(() =>{} , 5000); // every 5 seconds
-  setInterval(() => refreshPeerList(client), 5000); // every 5 seconds
 
+  refreshPeerList(client);
+  setInterval(() => refreshPeerList(client), 5000);
 });
 
-function getDirectMessageUser(client: Client): User | null{
-  const selectElement = document.getElementById('directMessageSelect') as HTMLSelectElement ;
-  if(!selectElement){
-    console.error("Select element not found");
-    return null;
-  }	
+function getDirectMessageUser(client: Client): User | null {
+  const selectElement = document.getElementById('directMessageSelect') as HTMLSelectElement;
+  if (!selectElement) return null;
+
   const selectedOption = selectElement.options[selectElement.selectedIndex];
-  let recipient = null;
-  for(const resolvedUser of client.getPeers()){
-
-    if(resolvedUser.displayName === selectedOption.textContent){
-      recipient = resolvedUser
-    }
-  }
-  if(!recipient){
-    console.log(`Couldn't find username ${selectedOption.textContent} in stored list of connected peers.`)
-    return null;
-  }
-  return recipient;
+  return client.getPeers().find(user => user.displayName === selectedOption.textContent) || null;
 }
 
-function utilityButton(client: Client){
-  client.utility();
-  // TODO: REMOVE THIS
-  // (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
-  // (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
-}
-function handleLogout(client: Client){
+function handleLogout(client: Client) {
   client.handleShutdown();
-  // TODO: REMOVE THIS
   (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
   (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
 
 function sendMessage(client: Client) {
   const inputElement = document.getElementById("messageInput") as HTMLInputElement;
-  let inputValue = "";
-  if (inputElement) {
-    inputValue = inputElement.value.trim();
-  } else {
-    console.error("Input element not found");
-  }
   const messageTypeElement = document.getElementById('sendMessageType') as HTMLSelectElement;
-  if(!messageTypeElement){
-    console.error("Message type element not found");
-    return;
-  }
-  const currentMessageType = messageTypeElement.value
-  
-  
-  // see other comment for reversal reason
-  const isDirectMessage = currentMessageType === "Direct Message";
-  console.log("isDirectMessage: " + isDirectMessage);
-  if(isDirectMessage){
-    const recipient = getDirectMessageUser(client);
-    if(!recipient){
-      console.error("No recipient found");
-      return;
-    }
-    addMessageToChat(`You to ${recipient.displayName}: ` + inputValue, true);
-    client.sendDirectMessage(inputValue, recipient);
-    return;
-  }
-  
-  if (inputValue) {
-    addMessageToChat("You: " + inputValue);
-    client.sendMessage(inputValue);
-    inputElement.innerText = "";  // Clear the input field
-    console.log("Sent message");
-  }
-  inputElement.value = "";  // Clear the input field
-}
 
+  if (!inputElement || !messageTypeElement) return;
+
+  const inputValue = inputElement.value.trim();
+  const isDirectMessage = messageTypeElement.value === "Direct Message";
+
+  if (isDirectMessage) {
+    const recipient = getDirectMessageUser(client);
+    if (!recipient) return;
+
+    addMessageToChat(`You to ${recipient.displayName}: ${inputValue}`, true);
+    client.sendDirectMessage(inputValue, recipient);
+  } else {
+    if (inputValue) {
+      addMessageToChat(`You: ${inputValue}`);
+      client.sendMessage(inputValue);
+    }
+  }
+
+  inputElement.value = "";
+}
 
 export function addMessageToChat(message: string, directMessage: boolean = false) {
-  console.log("Adding message to chat: " + message + " directMessage: " + directMessage);
   const chatBox = document.getElementById("messageBox");
+  if (!chatBox) return;
+
   const newMessage = document.createElement("div");
   newMessage.textContent = message;
-  if(directMessage){
-    newMessage.style.fontStyle = "italic";
-  }
-  if(!chatBox){
-    console.error("messageBox element not found");
-    return;
-  }
+  if (directMessage) newMessage.style.fontStyle = "italic";
+
   chatBox.appendChild(newMessage);
-  chatBox.scrollTop = chatBox.scrollHeight;  // Scroll to bottom
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function toggleDirectMessageSelect(client: Client){
-  console.log("Toggling direct message select");
-  
+function toggleDirectMessageSelect(client: Client) {
   const messageTypeElement = document.getElementById('sendMessageType') as HTMLSelectElement;
-  if(!messageTypeElement){
-    console.error("Message type element not found");
-    return;
-  }
-  const currentMessageType = messageTypeElement.value
-  console.log("Current message type: " + currentMessageType);
-  const isDirectMessage = currentMessageType === "Direct Message";
-  
+  if (!messageTypeElement) return;
+
+  const isDirectMessage = messageTypeElement.value === "Direct Message";
   const directMessageSelect = document.getElementById('directMessageSelect');
-  const directMessageSelectWrapper = document.getElementById('directMessageSelectWrapper');
-  if(!directMessageSelect || !directMessageSelectWrapper){
-      console.error("Element not found");
-      return;
-  }
-  
-  
+  const wrapper = document.getElementById('directMessageSelectWrapper');
+
+  if (!directMessageSelect || !wrapper) return;
+
   if (isDirectMessage) {
-    console.log("Direct message selected");    
     directMessageSelect.style.display = 'inline-block';
-    directMessageSelectWrapper.style.display = 'inline-block'
+    wrapper.style.display = 'inline-block';
     populateDirectMessageSelect(client);
   } else {
     directMessageSelect.style.display = 'none';
-    directMessageSelectWrapper.style.display = 'none';
+    wrapper.style.display = 'none';
   }
 }
 
-function getDirectMessageOptions(client: Client): string[]{
-  const users = client.users;
-  const peerNames = users.map((u: User) => u.displayName);
-  if(peerNames.length === 0){
-    peerNames.push("No users online");
-  }
-  return peerNames
+function getDirectMessageOptions(client: Client): string[] {
+  const peerNames = client.users.map((u: User) => u.displayName);
+  return peerNames.length > 0 ? peerNames : ["No users online"];
 }
 
-function populateDirectMessageSelect(client: Client){
-  console.log("Populating direct message select");
-  const directMessageSelect = document.getElementById('directMessageSelect');
+function populateDirectMessageSelect(client: Client) {
+  const select = document.getElementById('directMessageSelect');
+  if (!select) return;
+
   const options = getDirectMessageOptions(client);
-  if(!directMessageSelect){
-    console.error("Element not found");
-    return;
-  }
-  // Clear existing options
-  directMessageSelect.innerText = '';
-  
-  // Populate with new options
-  options.forEach((option: any) => {
+  select.innerText = '';
+
+  options.forEach(option => {
     const opt = document.createElement('option');
     opt.value = option;
     opt.textContent = option;
-    directMessageSelect.appendChild(opt);
+    select.appendChild(opt);
   });
-
 }
- 
-// Define the event handler outside the function to maintain the same reference
+
 function handleEnterKey(event: KeyboardEvent, client: Client) {
   if (event.key === "Enter") {
-    event.preventDefault(); // Prevent the default action (e.g., form submission)
-    console.log("Enter key pressed!");
-    sendMessage(client); // Call your sendMessage function here
+    event.preventDefault();
+    sendMessage(client);
   }
 }
- function refreshPeerList(client: Client) {
 
-
+function refreshPeerList(client: Client) {
   const list = document.getElementById('peerList') as HTMLUListElement;
   if (!list) return;
 
@@ -213,27 +142,15 @@ function handleEnterKey(event: KeyboardEvent, client: Client) {
   const peers = client.users.filter(user => user.getId() !== client.peer.peerId);
 
   if (peers.length === 0) {
-    console.log("///////////////////////////////////////////////////")
-    console.log("client.users:", client.getPeers());
-
-    console.log("No peers online");
-    console.log("///////////////////////////////////////////////////")
-
     const li = document.createElement('li');
     li.textContent = 'No peers online';
     list.appendChild(li);
     return;
   }
 
-
   peers.forEach((user: User) => {
     const li = document.createElement('li');
     li.textContent = `${user.displayName} (${user.getId().substring(0, 8)})`;
     list.appendChild(li);
   });
-  console.log("///////////////////////////////////////////////////")
-  console.log("Refreshing peer list is called");
-  console.log("the lis tis. ", list);
-  console.log("///////////////////////////////////////////////////")
- 
 }
