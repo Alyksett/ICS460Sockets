@@ -41,7 +41,13 @@ export async function initializeCallbacks(peer: Peer, client: Client){
     const pid = message.id;
     console.log("Mapped pid " + (message.id).substring(0, 5) + " with display name: " + message.name)
     const remotePeer = {"peerId":message.id, "address":message.address, "port":message.port}
-    client.addPeer(message.name, remotePeer);
+    const name = message.name
+    const wasPeerAdded = client.addPeer(name, remotePeer);
+    if(wasPeerAdded){
+      return;
+    }
+
+    addMessageToChat(`${name} joined the chat`, true);
   }
 
   const _handleDirectMessage = async (message: any) => {

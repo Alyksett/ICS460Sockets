@@ -65,14 +65,15 @@ export class Client{
         console.log("User left:", peerId);
       });
     }
-  
-    public addPeer(name: string, remotePeer: any){
+    /**If peer already exists, return true */
+    public addPeer(name: string, remotePeer: any): boolean{
       const isPeerAdded: boolean = this.users.reduce((acc: boolean, u:User) => {return u.displayName===name}, false);
       if(isPeerAdded){
-        return;
+        return true;
       }
       const newUser = new User(name, remotePeer);
       this.users.push(newUser);
+      return false;
     }
 
     public utility(){

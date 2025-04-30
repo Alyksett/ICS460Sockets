@@ -2,7 +2,7 @@ import { startClient } from './handler.js'
 import { Client, User } from './types.js';
 
 
-const SKIP_LOGIN = true;
+const SKIP_LOGIN = false;
 if(SKIP_LOGIN){
 
     const displayName = String(Math.floor(Math.random() * 1000));
@@ -33,7 +33,7 @@ if(SKIP_LOGIN){
     
     (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client!.peer.peerId).substring(0, 8)}`;
     (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
-    (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
+    (document.getElementById('chatBox') as HTMLElement).style.display = 'grid';
 }else{
 
   document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
@@ -67,7 +67,7 @@ if(SKIP_LOGIN){
     
     (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client.peer.peerId).substring(0, 8)}`;
     (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
-    (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
+    (document.getElementById('chatBox') as HTMLElement).style.display = 'grid';
   
   });
 }
@@ -102,7 +102,13 @@ function utilityButton(client: Client){
 function handleLogout(client: Client){
   client.handleShutdown();
   // TODO: REMOVE THIS
+
+  
+  
+  
+  
   (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
+  (document.getElementById('chatBox') as HTMLElement).innerHTML = "";
   (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
 
