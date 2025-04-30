@@ -4,6 +4,7 @@ import Buffer from 'socket:buffer';
 import { Packet } from 'socket:network';
 import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
+import {populateDirectMessageSelect, refreshPeerList} from './index.js';
 
 export async function packetQuery(query: any) {
   const packet = new PacketQuery({
@@ -70,6 +71,9 @@ export function _handleMessage(client: Client, _subcluster: any, message: any) {
 }
 
 async function _handleJoin(client: Client, _subcluster: any, newPeer: any) {
+  refreshPeerList(client);
+   populateDirectMessageSelect(client);
+ 
   const queryMessage = {
     operation: "getName",
     address: client.peer.address,
@@ -110,6 +114,8 @@ function _resolveName(client: Client, _subcluster: any, msg: any) {
 
 function _handleLeave(client: Client, _subcluster: any, peer: any) {
   const { peerId } = JSON.parse(peer);
+  populateDirectMessageSelect(client);
+  refreshPeerList(client);
   const name = client.removePeer(peerId);
   if (name) {
     addMessageToChat(`${name} has left the chat.`);

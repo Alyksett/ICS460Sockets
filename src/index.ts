@@ -33,8 +33,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
 
   refreshPeerList(client);
-  setInterval(() => refreshPeerList(client), 5000);
-});
+ });
 
 function getDirectMessageUser(client: Client): User | null {
   const selectElement = document.getElementById('directMessageSelect') as HTMLSelectElement;
@@ -112,20 +111,28 @@ function getDirectMessageOptions(client: Client): string[] {
   return peerNames.length > 0 ? peerNames : ["No users online"];
 }
 
-export function populateDirectMessageSelect(client: Client) {
-  const select = document.getElementById('directMessageSelect');
-  if (!select) return;
-
+  
+ export function populateDirectMessageSelect(client: Client){
+  console.log("Populating direct message select");
+  const directMessageSelect = document.getElementById('directMessageSelect');
   const options = getDirectMessageOptions(client);
-  select.innerText = '';
-
-  options.forEach(option => {
+  if(!directMessageSelect){
+    console.error("Element not found");
+    return;
+  }
+  // Clear existing options
+  directMessageSelect.innerText = '';
+  
+  // Populate with new options
+  options.forEach((option: any) => {
     const opt = document.createElement('option');
     opt.value = option;
     opt.textContent = option;
-    select.appendChild(opt);
+    directMessageSelect.appendChild(opt);
   });
+
 }
+  
 
 function handleEnterKey(event: KeyboardEvent, client: Client) {
   if (event.key === "Enter") {
@@ -135,22 +142,32 @@ function handleEnterKey(event: KeyboardEvent, client: Client) {
 }
 
 export function refreshPeerList(client: Client) {
-  const list = document.getElementById('peerList') as HTMLUListElement;
-  if (!list) return;
+  const container = document.getElementById('peerListContainer');
+  if (!container) return;
 
-  list.innerHTML = '';
-  const peers = client.users.filter(user => user.getId() !== client.peer.peerId);
+  container.style.display = 'block';
+  container.innerHTML = '';
+
+  const peers = client.getPeersOnline().sort((a, b) =>
+    a.displayName.localeCompare(b.displayName)
+  );
+
+  console.log("///////////////////////////////////");
+  console.log("Refreshing peer list", peers);
+  console.log("///////////////////////////////////");
+
+  const listElement = document.createElement('ul');
+  listElement.style.listStyleType = 'none';
 
   if (peers.length === 0) {
-    const li = document.createElement('li');
-    li.textContent = 'No peers online';
-    list.appendChild(li);
-    return;
+    listElement.innerHTML = '<li>No peers online</li>';
+  } else {
+    peers.forEach((user) => {
+      const li = document.createElement('li');
+      li.textContent = `${user.displayName} (${user.getId().substring(0, 8)})`;
+      listElement.appendChild(li);
+    });
   }
 
-  peers.forEach((user: User) => {
-    const li = document.createElement('li');
-    li.textContent = `${user.displayName} (${user.getId().substring(0, 8)})`;
-    list.appendChild(li);
-  });
+  container.appendChild(listElement);
 }

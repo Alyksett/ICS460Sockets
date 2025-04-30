@@ -81,6 +81,7 @@ export class Client{
       this.users.push(newUser);
     }
 
+
     public utility(){
       console.log("===============================================");
       console.log("My Peer ID: " + (this.peerId.substring(0, 5)));
@@ -101,7 +102,12 @@ export class Client{
       }
       return user;
     }
-  
+    public  getPeersOnline( ) {
+ console.log("Getting peers online");
+    console.log("My Peer ID: " + (this.users.filter(user => user.getId() !== this.peer.peerId)).toString());
+      return this.users.filter(user => user.getId() !== this.peer.peerId);
+    
+  }
     public removePeer(peerId: string): string | null{
       let removedPeerName: string | null = null;
       // TODO: Does this work...?
