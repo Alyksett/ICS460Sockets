@@ -33,11 +33,10 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   // (window as any).utilityButton = () => utilityButton(client);
   console.log("Client initialized");
  
-  // Set up the event listener for the utility button
-  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client.peer.peerId).substring(0, 8)}`;
+   (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client.peer.peerId).substring(0, 8)}`;
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
-  
+  setInterval(() => {refreshListOfPeersOnline(client)}, 9999);  
 });
 
 function getDirectMessageUser(client: Client): User | null{
@@ -200,26 +199,26 @@ function handleEnterKey(event: KeyboardEvent, client: Client) {
   }
 }
 
-export const refreshListOfPeersOnline = (client: Client) => {
-  const peerListContainer = document.getElementById('peerListContert') as HTMLUListElement;
-  
-    peerListContainer.style.display = 'block';
-    peerListContainer.innerHTML = 'Hey this is working'; // Clear existing list
-  
-    const peerListElement = document.getElementById('peerList') as HTMLUListElement;
-    //console log # 30 times and log that the function is called
-    console.log("############################");
-    
-      console.log("Refreshing list of peers online");
-       console.log("############################");
-       client.getPeers().forEach((peer) => {
-        console.log("Adding peer to list: " + peer.displayName);
-        const peerElement = document.createElement('li');
-        peerElement.textContent = peer.displayName; // Adjust this as needed
-        peerListElement.appendChild(peerElement);
-      });
-      // Add the current user to the list
-     
-  
-    }
-  
+export function refreshListOfPeersOnline(client: Client) {
+  const peerListContainer = document.getElementById('peerListContainer') as HTMLDivElement;
+  const peerListElement = document.getElementById('peerList') as HTMLUListElement;
+
+  if (!peerListContainer || !peerListElement) {
+    console.error("peerListContainer or peerList element not found");
+    return;
+  }
+
+  console.log("############################");
+  console.log("Refreshing list of peers online");
+  console.log("############################");
+
+  peerListContainer.style.display = 'block';
+  peerListElement.innerHTML = ''; // Clear existing list before repopulating
+
+  getDirectMessageOptions(client).forEach((peer) => {
+    console.log("Adding peer to list: " + peer);
+    const peerElement = document.createElement('li');
+    peerElement.textContent = peer;
+    peerListElement.appendChild(peerElement);
+  });
+}

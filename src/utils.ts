@@ -4,9 +4,7 @@ import Buffer from 'socket:buffer';
 import { Packet } from 'socket:network';
 import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
-import { refreshListOfPeersOnline } from './index.js';
-import { ref } from 'process';
- 
+  
 export async function packetQuery(query: any){
   // I copied all this from the source code and it works
   // They don't really make it clear what usr1/2/3 are but... it works?
@@ -138,7 +136,6 @@ async function _handleJoin(client: Client, subcluster: any, newPeer: any){
 
   // send this packet to the network (and eventually the new peer will get it and respond to us)
   client.peer.query(packet);
-  refreshListOfPeersOnline(client);
 
 }
 
@@ -169,8 +166,7 @@ function _resolveName(client: Client, subcluster: any, peerMessage: any){
 }
 
 function _handleLeave(client: Client, subcluster: any, peer: any){
-  refreshListOfPeersOnline(client);
-  refreshListOfPeersOnline(client);
+  
   console.log("==================Handling leave================");
   const payload = JSON.parse(peer);
   const leftPeerName: string | null = client.removePeer(payload.peerId);
