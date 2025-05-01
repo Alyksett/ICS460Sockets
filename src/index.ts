@@ -1,3 +1,4 @@
+import { get } from 'socket:http';
 import { startClient } from './handler.js'
 import { Client, User } from './types.js';
 
@@ -23,19 +24,20 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   }
 
   (window as any).sendMessage = () => sendMessage(client);
-  
+   
   const messageInput = document.getElementById("messageInput") as HTMLInputElement;
   messageInput.addEventListener("keyup", (event) => handleEnterKey(event, client));
-
+(window as any).refreshListOfPeersOnline = () => refreshListOfPeersOnline(client);
   (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
   (window as any).handleLogout = () => handleLogout(client);
   // (window as any).utilityButton = () => utilityButton(client);
   console.log("Client initialized");
-  
+ 
+  // Set up the event listener for the utility button
   (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client.peer.peerId).substring(0, 8)}`;
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
-
+  
 });
 
 function getDirectMessageUser(client: Client): User | null{
@@ -61,11 +63,11 @@ function getDirectMessageUser(client: Client): User | null{
 
 function utilityButton(client: Client){
   client.utility();
-  // TODO: REMOVE THIS
   // (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
   // (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
 function handleLogout(client: Client){
+  
   client.handleShutdown();
   // TODO: REMOVE THIS
   (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
@@ -99,6 +101,7 @@ function sendMessage(client: Client) {
     }
     addMessageToChat(`You to ${recipient.displayName}: ` + inputValue, true);
     client.sendDirectMessage(inputValue, recipient);
+    inputElement.value = "";  // Clear the input field
     return;
   }
   
@@ -196,3 +199,27 @@ function handleEnterKey(event: KeyboardEvent, client: Client) {
     sendMessage(client); // Call your sendMessage function here
   }
 }
+
+export const refreshListOfPeersOnline = (client: Client) => {
+  const peerListContainer = document.getElementById('peerListContert') as HTMLUListElement;
+  
+    peerListContainer.style.display = 'block';
+    peerListContainer.innerHTML = 'Hey this is working'; // Clear existing list
+  
+    const peerListElement = document.getElementById('peerList') as HTMLUListElement;
+    //console log # 30 times and log that the function is called
+    console.log("############################");
+    
+      console.log("Refreshing list of peers online");
+       console.log("############################");
+       client.getPeers().forEach((peer) => {
+        console.log("Adding peer to list: " + peer.displayName);
+        const peerElement = document.createElement('li');
+        peerElement.textContent = peer.displayName; // Adjust this as needed
+        peerListElement.appendChild(peerElement);
+      });
+      // Add the current user to the list
+     
+  
+    }
+  

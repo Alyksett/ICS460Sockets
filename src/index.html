@@ -44,12 +44,17 @@
     </div>
     </div>    
     <!-- CHAT -->
-    
-    <label id="nameLabel"></label>
-    <div id="chatBox" style="display:none;">
+     <label id="nameLabel"></label>
+     <div id="chatBox" style="display:none;">
+      <div id="peerListContainer" style="display: flex; flex-direction: column; align-items: center; margin-right: 2em;">
+        <h3>Online Peers</h3>
+        <ul id="peerList"></ul>
+      </div>
+     
       <div id= "chatPage" style="display: flex; flex-direction: column; align-items: center;">
         <!-- Chat Box -->
         <div id="messageBox" style="border-color: black;"></div>
+        
          
         <!-- Message Input -->
         <div>
@@ -67,6 +72,7 @@
         <div id="directMessageSelectWrapper" style="display: none;">
             Send message to:
         </div>
+       
         <select id="directMessageSelect" style="display: none;">    
             <!-- Options will be populated by JavaScript -->
         </select>
@@ -81,6 +87,7 @@
       </div>
       </div>
     </div>
+    
     <script src="index.js" type="module" defer></script>
   </body>
 </html>
