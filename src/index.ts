@@ -207,10 +207,7 @@ export function refreshListOfPeersOnline(client: Client) {
     console.error("peerListContainer or peerList element not found");
     return;
   }
-
-  console.log("############################");
-  console.log("Refreshing list of peers online");
-  console.log("############################");
+ 
 
   peerListContainer.style.display = 'block';
   peerListElement.innerHTML = ''; // Clear existing list before repopulating
