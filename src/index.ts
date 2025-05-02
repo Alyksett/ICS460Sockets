@@ -1,8 +1,7 @@
-import { get } from 'socket:http';
+// Main entry point from the UI's perspective
+
 import { startClient } from './handler.js'
 import { Client, User } from './types.js';
-
-
 
 document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
   console.log("Login form submitted");
@@ -60,20 +59,14 @@ function getDirectMessageUser(client: Client): User | null{
   return recipient;
 }
 
-function utilityButton(client: Client){
-  client.utility();
-  // (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
-  // (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
-}
 function handleLogout(client: Client){
-  
-  client.handleShutdown();
-  // TODO: REMOVE THIS
+  client.handleShutdown();  
   (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
+  (document.getElementById('chatBox') as HTMLElement).innerHTML = "";
   (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
 
-function sendMessage(client: Client) {
+async function sendMessage(client: Client) {
   const inputElement = document.getElementById("messageInput") as HTMLInputElement;
   let inputValue = "";
   if (inputElement) {
@@ -99,8 +92,9 @@ function sendMessage(client: Client) {
       return;
     }
     addMessageToChat(`You to ${recipient.displayName}: ` + inputValue, true);
-    client.sendDirectMessage(inputValue, recipient);
+    
     inputElement.value = "";  // Clear the input field
+    await client.sendDirectMessage(inputValue, recipient.peer);
     return;
   }
   
@@ -193,9 +187,9 @@ function populateDirectMessageSelect(client: Client){
 // Define the event handler outside the function to maintain the same reference
 function handleEnterKey(event: KeyboardEvent, client: Client) {
   if (event.key === "Enter") {
-    event.preventDefault(); // Prevent the default action (e.g., form submission)
+    event.preventDefault();
     console.log("Enter key pressed!");
-    sendMessage(client); // Call your sendMessage function here
+    sendMessage(client);
   }
 }
 

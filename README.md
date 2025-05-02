@@ -2,6 +2,7 @@
 
 1. Install node
 2. run `npm install` in this root directory.
+3. If you want to run another peer (and peer2), cd into peer and run `npm install`
 
 The project is setup in the following way:
 - `src/` holds all the code that is ran
@@ -24,9 +25,3 @@ There are three scripts for running:
 `values.ts` holds constants.
 
 `utils.ts` is a good place to see the "commands" or "routes". Note that all the functions (*.on("...", ...)) are **receiver** functions, i.e they handle the **receiving** of messages (There is also some cluster/peer sending happening).
-
-
-## NOTE
-
-There's a lot going on in socketsupply when sending packets back and fourth so sometimes messages are slow, sometimes it takes a bit for the "joined the chat" message to come through,
-sometimes (often times) messages get "stuck" somewhere on the wire and will send 10 minutes later on a completely different run. The prize for solving this is 1 million dollars because I have no idea why it's happening and it's both obnoxious and confusing and I want it to stop
