@@ -1,7 +1,7 @@
 import { Client, User } from './types.js';
 import { addMessageToChat } from './index.js';
-import Buffer from 'socket:buffer';
 import { Packet } from 'socket:network';
+import Buffer from 'socket:buffer';
 import { PacketQuery } from 'socket:latica/packets';
 import { randomBytes } from 'socket:crypto';
 
@@ -79,7 +79,7 @@ function _handleDirectMessage(client: Client, subcluster: any, message: any){
   const messageContent = parsedMessage.message;
   const messagePeer = parsedMessage.peer;
   const messageAuthor = parsedMessage.author;
-  if(messagePeer === client.peerId){
+  if(messagePeer === client.peer.peerId){
     console.log("Direct message is from self. Ignoring.");
     return;
   }
@@ -92,7 +92,7 @@ function _handleDirectMessageSocket(client: Client, subcluster: any, message: an
   const messageContent = parsedMessage.message;
   const messagePeer = parsedMessage.peer;
   const messageAuthor = parsedMessage.author;
-  if(messagePeer === client.peerId){
+  if(messagePeer === client.peer.peerId){
     console.log("Direct message is from self. Ignoring.");
     return;
   }
@@ -106,7 +106,7 @@ export function _handleMessage(client: Client, subcluster: any, message: any){
   const messageContent = parsedMessage.message;
   const messagePeer = parsedMessage.peer;
   const messageAuthor = parsedMessage.author;
-  if(messagePeer === client.peerId){
+  if(messagePeer === client.peer.peerId){
     console.log("Message is from self. Ignoring.");
     return;
   }
@@ -142,11 +142,11 @@ function _requestName(client: Client, subcluster: any, requesterMessage: any){
   console.log("==================Handling requestName================");
   const json = JSON.parse(requesterMessage);
   const requesterId = json.peerId;
-  if(requesterId === client.peerId){
+  if(requesterId === client.peer.peerId){
     console.log("Self request detected. Ignoring.");
     return;
   }
-  subcluster.peers.get(requesterId).emit("resolveName", { peerId: client.peerId, displayName: client.displayName });
+  subcluster.peers.get(requesterId).emit("resolveName", { peerId: client.peer.peerId, displayName: client.displayName });
 }
 
 function _resolveName(client: Client, subcluster: any, peerMessage: any){

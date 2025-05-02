@@ -2,41 +2,75 @@ import { startClient } from './handler.js'
 import { Client, User } from './types.js';
 
 
+const SKIP_LOGIN = false;
+if(SKIP_LOGIN){
 
-document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
-  console.log("Login form submitted");
-  event.preventDefault();
-  const displayName = (document.getElementById('displayName') as HTMLInputElement).value;
-  const clusterId = (document.getElementById('clusterId') as HTMLInputElement).value;
-  const messageType = (document.getElementById('sendMessageType') as HTMLInputElement);
-  console.log(messageType);
+    const displayName = String(Math.floor(Math.random() * 1000));
+    const clusterId = "9929";
 
-  let client: Client;
-
-  try {
-    console.log("Starting client...");
-    client = await startClient(displayName, clusterId);
-    console.log("Client started successfully");
-  } catch (error) {
-    console.error("Error starting client:", error);
-    return;
-  }
-
-  (window as any).sendMessage = () => sendMessage(client);
+    const messageType = (document.getElementById('sendMessageType') as HTMLInputElement);
+    console.log(messageType);
   
-  const messageInput = document.getElementById("messageInput") as HTMLInputElement;
-  messageInput.addEventListener("keyup", (event) => handleEnterKey(event, client));
-
-  (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
-  (window as any).handleLogout = () => handleLogout(client);
-  // (window as any).utilityButton = () => utilityButton(client);
-  console.log("Client initialized");
+    let client: Client;
   
-  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client.peer.peerId).substring(0, 8)}`;
-  (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
-  (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
+    try {
+      console.log("Starting client...");
+      client = await startClient(displayName, clusterId);
+      console.log("Client started successfully");
+    } catch (error) {
+      console.error("Error starting client:", error);
+    }
+  
+    (window as any).sendMessage = async () => await sendMessage(client);
+    
+    const messageInput = document.getElementById("messageInput") as HTMLInputElement;
+    messageInput.addEventListener("keyup", (event) => handleEnterKey(event, client));
+  
+    (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
+    (window as any).handleLogout = () => handleLogout(client);
+    // (window as any).utilityButton = () => utilityButton(client);
+    console.log("Client initialized");
+    
+    (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client!.peer.peerId).substring(0, 8)}`;
+    (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
+    (document.getElementById('chatBox') as HTMLElement).style.display = 'grid';
+}else{
 
-});
+  document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
+    console.log("Login form submitted");
+    event.preventDefault();
+    const displayName = (document.getElementById('displayName') as HTMLInputElement).value;
+    const clusterId = (document.getElementById('clusterId') as HTMLInputElement).value;
+    const messageType = (document.getElementById('sendMessageType') as HTMLInputElement);
+    console.log(messageType);
+  
+    let client: Client;
+  
+    try {
+      console.log("Starting client...");
+      client = await startClient(displayName, clusterId);
+      console.log("Client started successfully");
+    } catch (error) {
+      console.error("Error starting client:", error);
+      return;
+    }
+  
+    (window as any).sendMessage = async () => await sendMessage(client);
+    
+    const messageInput = document.getElementById("messageInput") as HTMLInputElement;
+    messageInput.addEventListener("keyup", (event) => handleEnterKey(event, client));
+  
+    (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
+    (window as any).handleLogout = () => handleLogout(client);
+    // (window as any).utilityButton = () => utilityButton(client);
+    console.log("Client initialized");
+    
+    (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client.peer.peerId).substring(0, 8)}`;
+    (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
+    (document.getElementById('chatBox') as HTMLElement).style.display = 'grid';
+  
+  });
+}
 
 function getDirectMessageUser(client: Client): User | null{
   const selectElement = document.getElementById('directMessageSelect') as HTMLSelectElement ;
@@ -68,11 +102,17 @@ function utilityButton(client: Client){
 function handleLogout(client: Client){
   client.handleShutdown();
   // TODO: REMOVE THIS
+
+  
+  
+  
+  
   (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
+  (document.getElementById('chatBox') as HTMLElement).innerHTML = "";
   (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
 
-function sendMessage(client: Client) {
+async function sendMessage(client: Client) {
   const inputElement = document.getElementById("messageInput") as HTMLInputElement;
   let inputValue = "";
   if (inputElement) {
@@ -98,7 +138,8 @@ function sendMessage(client: Client) {
       return;
     }
     addMessageToChat(`You to ${recipient.displayName}: ` + inputValue, true);
-    client.sendDirectMessage(inputValue, recipient);
+
+    await client.sendDirectMessage(inputValue, recipient.peer);
     return;
   }
   

@@ -1,9 +1,10 @@
 import type { RemotePeer, Peer } from "socket:latica";
-
-import Buffer from 'socket:buffer';
 import type EventEmitter from "socket:events";
 // import { PEER_ID_MASK } from './values.js';
-
+import Buffer from 'socket:buffer';
+import { PacketQuery } from 'socket:latica/packets';
+import { randomBytes } from 'socket:crypto';
+import { Packet } from 'socket:network';
 
 const PEER_ID_MASK: string[] = []
 
@@ -11,7 +12,21 @@ type ExtendedEventEmitter = EventEmitter & {
   [key: string]: any; // Allows arbitrary properties
 };
 
+async function packetQuery(query: any){
+  // I copied all this from the source code and it works
+  // They don't really make it clear what usr1/2/3 are but... it works?
+  const packet = new PacketQuery({
+    message: query,
+    usr1: Buffer.from(String(Date.now())),
+    usr3: Buffer.from(randomBytes(32)),
+    usr4: Buffer.from(String(1))
+  })
+  // also don't know why we're encoding and decoding
+  const data = await Packet.encode(packet)
+  const p = Packet.decode(data)
 
+  return p
+}
 
 export class User{
   displayName: string;
@@ -30,7 +45,6 @@ export class User{
 
 export class Client{
     displayName: string;
-    peerId: any;
     socket: ExtendedEventEmitter;
     clusterId: any;
     subcluster: ExtendedEventEmitter;
@@ -39,7 +53,6 @@ export class Client{
   
     constructor(displayName: string, peerId: any, socket: any, clusterId: any, subcluster: any, peer: Peer){
       this.displayName = displayName;
-      this.peerId = peerId;
       this.socket = socket;
       this.clusterId = clusterId;
       this.subcluster = subcluster;
@@ -52,26 +65,27 @@ export class Client{
         console.log("User left:", peerId);
       });
     }
-  
-    public addPeer(name: string, remotePeer: RemotePeer){
+    /**If peer already exists, return true */
+    public addPeer(name: string, remotePeer: any): boolean{
       const isPeerAdded: boolean = this.users.reduce((acc: boolean, u:User) => {return u.displayName===name}, false);
       if(isPeerAdded){
-        return;
+        return true;
       }
       const newUser = new User(name, remotePeer);
       this.users.push(newUser);
+      return false;
     }
 
     public utility(){
       console.log("===============================================");
-      console.log("My Peer ID: " + (this.peerId.substring(0, 5)));
+      console.log("My Peer ID: " + (this.peer.peerId.substring(0, 5)));
       const safePeers = this.peer.peers.filter((p: RemotePeer) => !PEER_ID_MASK.includes(p.peerId));
       console.log("Safe Peers: " + JSON.stringify(safePeers.map((p: RemotePeer) => p.peerId), null, 2));
       console.log("===============================================");
     }
   
     public handleShutdown(){
-      this.subcluster.emit("logout", JSON.stringify({ peerId: this.peerId }));
+      this.subcluster.emit("logout", JSON.stringify({ peerId: this.peer.peerId }));
     }
     
     public getUserById(peerId: string): User | null {
@@ -109,17 +123,28 @@ export class Client{
       return this.users;
     }
   
-    public sendDirectMessage(message: any, recipient: User){
-      const packagedMessage = Buffer.from(JSON.stringify({ message: message, peer: this.peerId, author: this.displayName }));
-      const recipientId = recipient.peer.peerId;
-      const port = recipient.peer.port;
-      const address = recipient.peer.address;
-      console.log("Sending direct message to peer: " + recipientId.substring(0, 4))
-      this.peer.socket.emit(Buffer.from("Hey man"), port, address);
+    public async sendDirectMessage(message: any, recipient: any){
+      console.log("Sending direct message...");
+      
+      // const recipientId = recipient.peer.peerId;
+      // const port = recipient.peer.port;
+      // const address = recipient.peer.address;
+      // console.log("Sending direct message to peer: " + recipientId.substring(0, 4))
+      const msg = {
+        "operation":"directMessage",
+        "address":this.peer.address,
+        "port":this.peer.port,
+        "peerId":this.peer.peerId,
+        "message":message
+      }
+      const packet = await packetQuery(msg)
+      console.log("Sending now");
+      
+      this.peer.query(packet);
     }
   
     public sendMessage(message: any){
-      const buf = Buffer.from(JSON.stringify({ message: message, peer: this.peerId, author: this.displayName }));
+      const buf = Buffer.from(JSON.stringify({ message: message, peer: this.peer.peerId, author: this.displayName }));
       this.subcluster.emit("message", buf);
   
     }
