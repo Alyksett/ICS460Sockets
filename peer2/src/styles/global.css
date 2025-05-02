@@ -3,6 +3,8 @@ html, body {
     margin: 0;
 }
 body {
+    margin: 10px;
+     
     display: grid;
     justify-content: center;
     align-content: center;

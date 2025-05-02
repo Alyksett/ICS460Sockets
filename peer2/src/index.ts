@@ -1,5 +1,8 @@
-import { Client, startClient, User } from './handler.js'
-import { pid } from './utils.js';
+import { get } from 'socket:http';
+import { startClient } from './handler.js'
+import { Client, User } from './types.js';
+
+
 
 document.getElementById('loginForm')?.addEventListener('submit', async (event) => {
   console.log("Login form submitted");
@@ -21,18 +24,20 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
   }
 
   (window as any).sendMessage = () => sendMessage(client);
-  (window as any).sendMessageEnter = () => sendMessageEnter(client);
-  
-
+   
+  const messageInput = document.getElementById("messageInput") as HTMLInputElement;
+  messageInput.addEventListener("keyup", (event) => handleEnterKey(event, client));
+(window as any).refreshListOfPeersOnline = () => refreshListOfPeersOnline(client);
   (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
   (window as any).handleLogout = () => handleLogout(client);
   // (window as any).utilityButton = () => utilityButton(client);
   console.log("Client initialized");
-  
-  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${pid(client.peer.peerId)}`;
+ 
+  // Set up the event listener for the utility button
+  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client.peer.peerId).substring(0, 8)}`;
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
-
+  
 });
 
 function getDirectMessageUser(client: Client): User | null{
@@ -43,17 +48,14 @@ function getDirectMessageUser(client: Client): User | null{
   }	
   const selectedOption = selectElement.options[selectElement.selectedIndex];
   let recipient = null;
-  for(const remotePeer of client.getPeers()){
-    const resolvedUser: User | null = client.getUserById(remotePeer.peerId);
-    if(!resolvedUser){
-      console.error("Couldn't find user with id: " + remotePeer.peerId);
-      continue;
-    }
+  for(const resolvedUser of client.getPeers()){
+
     if(resolvedUser.displayName === selectedOption.textContent){
       recipient = resolvedUser
     }
   }
   if(!recipient){
+    console.log(`Couldn't find username ${selectedOption.textContent} in stored list of connected peers.`)
     return null;
   }
   return recipient;
@@ -61,15 +63,15 @@ function getDirectMessageUser(client: Client): User | null{
 
 function utilityButton(client: Client){
   client.utility();
-  // TODO: REMOVE THIS
   // (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
   // (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
 function handleLogout(client: Client){
+  
   client.handleShutdown();
   // TODO: REMOVE THIS
-  // (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
-  // (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
+  (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
+  (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
 }
 
 function sendMessage(client: Client) {
@@ -99,6 +101,7 @@ function sendMessage(client: Client) {
     }
     addMessageToChat(`You to ${recipient.displayName}: ` + inputValue, true);
     client.sendDirectMessage(inputValue, recipient);
+    inputElement.value = "";  // Clear the input field
     return;
   }
   
@@ -188,15 +191,35 @@ function populateDirectMessageSelect(client: Client){
 
 }
  
-function sendMessageEnter( client: Client) { 
-  const inputElement = document.getElementById("messageInput") as HTMLInputElement;
-  inputElement.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault(); // Prevent the default action (e.g., form submission)
-      console.log("Enter key pressed!");
-      // Call your sendMessage function here
-      sendMessage(client);
-    }
+// Define the event handler outside the function to maintain the same reference
+function handleEnterKey(event: KeyboardEvent, client: Client) {
+  if (event.key === "Enter") {
+    event.preventDefault(); // Prevent the default action (e.g., form submission)
+    console.log("Enter key pressed!");
+    sendMessage(client); // Call your sendMessage function here
+  }
+}
+
+export function refreshListOfPeersOnline(client: Client) {
+  const peerListContainer = document.getElementById('peerListContainer') as HTMLDivElement;
+  const peerListElement = document.getElementById('peerList') as HTMLUListElement;
+
+  if (!peerListContainer || !peerListElement) {
+    console.error("peerListContainer or peerList element not found");
+    return;
+  }
+
+  console.log("############################");
+  console.log("Refreshing list of peers online");
+  console.log("############################");
+
+  peerListContainer.style.display = 'block';
+  peerListElement.innerHTML = ''; // Clear existing list before repopulating
+
+  getDirectMessageOptions(client).forEach((peer) => {
+    console.log("Adding peer to list: " + peer);
+    const peerElement = document.createElement('li');
+    peerElement.textContent = peer;
+    peerListElement.appendChild(peerElement);
   });
-   
- }
+}
