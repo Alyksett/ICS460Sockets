@@ -13,9 +13,8 @@ async function packetQuery(query: any){
     usr1: Buffer.from(String(Date.now())),
     usr3: Buffer.from(randomBytes(32)),
     usr4: Buffer.from(String(1)),
-    // clusterId:Buffer.from(peer.clusterId)
   })
-  // also don't know why we're encoding and decoding
+
   const data = await Packet.encode(packet)
   const p = Packet.decode(data)
 
@@ -50,10 +49,13 @@ export async function initializeCallbacks(peer: Peer, client: Client){
     addMessageToChat(`${name} joined the chat`, true);
   }
 
-  const _handleDirectMessage = async (message: any) => {
+  const _handleDirectMessage = async (message: any, client: Client) => {
     console.log(message);
-    
     const author = client.getUserById(message.peerId)?.displayName
+    const target = message.targetId
+    if(target !== client.peer.peerId){ // yikes
+      return; 
+    }
     const formatted = `Direct from ${author}: ${message.message}`
     addMessageToChat(formatted, true)
     
@@ -72,7 +74,7 @@ export async function initializeCallbacks(peer: Peer, client: Client){
     switch (operation){
       case "getName": await _recGetName();break; // They told us "Send me your display name"
       case "sendName": await _recSendName(json);break; // They told us "Here's my display name"
-      case "directMessage": await _handleDirectMessage(json);break; // They told us "Here's my display name"
+      case "directMessage": await _handleDirectMessage(json, client);break; // They told us "Here's my display name"
       default: console.log("Couldn't match operation: " + operation);
     }
   }

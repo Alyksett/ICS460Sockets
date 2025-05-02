@@ -6,8 +6,10 @@ import { Client } from './types.js';
 import { initializeCallbacks } from './peerUtils.js';
 import type EventEmitter from 'socket:events';
 import dgram from 'socket:dgram';
+
+// SS uses runtime types
 export type ExtendedEventEmitter = EventEmitter & {
-  [key: string]: any; // Allows arbitrary properties
+  [key: string]: any;
 };
 async function clusterize(displayName: string, userClusterId: string, peer: Peer): Promise<Client>{
   console.log("Starting cluster client...");
@@ -31,10 +33,10 @@ async function peerize(displayName: string, userClusterId: string){
   
   const id = await Encryption.createId(displayName);
   const clusterId = await Encryption.createClusterId(userClusterId)
-
-  // Create a new peer, dgram is the module that has the function to create
-  // a new socket (the Peer constructor will do this internally)
   
+  
+    // Create a new peer, dgram is the module that has the function to create
+    // a new socket (the Peer constructor will do this internally)
   const peer = new Peer({"peerId":id, clusterId: clusterId}, dgram)
   
   // When the peer is initialized this is executed
@@ -42,8 +44,7 @@ async function peerize(displayName: string, userClusterId: string){
 
   // If the peer/socketsupply has any errors internally then we log it to console
   peer._onError = (err: any) => {console.log("_onError: " + err)}; 
-  
-  // I read that this is important, still not sure what it does lol
+
   peer.join(userClusterId);
   
   return peer;

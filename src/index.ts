@@ -1,10 +1,12 @@
+// Main entry point from the UI's perspective
+
 import { startClient } from './handler.js'
 import { Client, User } from './types.js';
 
 
+//Utility: To skip login switch this to true (Make sure you don't commit this being true)
 const SKIP_LOGIN = false;
 if(SKIP_LOGIN){
-
     const displayName = String(Math.floor(Math.random() * 1000));
     const clusterId = "9929";
 
@@ -93,20 +95,8 @@ function getDirectMessageUser(client: Client): User | null{
   return recipient;
 }
 
-function utilityButton(client: Client){
-  client.utility();
-  // TODO: REMOVE THIS
-  // (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
-  // (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
-}
 function handleLogout(client: Client){
-  client.handleShutdown();
-  // TODO: REMOVE THIS
-
-  
-  
-  
-  
+  client.handleShutdown();  
   (document.getElementById('chatBox') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).innerHTML = "";
   (document.getElementById('loginPage') as HTMLElement).style.display = 'grid';
@@ -232,8 +222,8 @@ function populateDirectMessageSelect(client: Client){
 // Define the event handler outside the function to maintain the same reference
 function handleEnterKey(event: KeyboardEvent, client: Client) {
   if (event.key === "Enter") {
-    event.preventDefault(); // Prevent the default action (e.g., form submission)
+    event.preventDefault();
     console.log("Enter key pressed!");
-    sendMessage(client); // Call your sendMessage function here
+    sendMessage(client);
   }
 }

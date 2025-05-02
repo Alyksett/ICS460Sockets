@@ -8,13 +8,14 @@ import { Packet } from 'socket:network';
 
 const PEER_ID_MASK: string[] = []
 
+// SS makes some sort of runtime type for remotePeer, this captures some of it
 type ExtendedEventEmitter = EventEmitter & {
   [key: string]: any; // Allows arbitrary properties
 };
 
 async function packetQuery(query: any){
   // I copied all this from the source code and it works
-  // They don't really make it clear what usr1/2/3 are but... it works?
+  // They don't really make it clear what usr1/2/3 are, likely dummy previous packet IDs
   const packet = new PacketQuery({
     message: query,
     usr1: Buffer.from(String(Date.now())),
@@ -75,14 +76,6 @@ export class Client{
       this.users.push(newUser);
       return false;
     }
-
-    public utility(){
-      console.log("===============================================");
-      console.log("My Peer ID: " + (this.peer.peerId.substring(0, 5)));
-      const safePeers = this.peer.peers.filter((p: RemotePeer) => !PEER_ID_MASK.includes(p.peerId));
-      console.log("Safe Peers: " + JSON.stringify(safePeers.map((p: RemotePeer) => p.peerId), null, 2));
-      console.log("===============================================");
-    }
   
     public handleShutdown(){
       this.subcluster.emit("logout", JSON.stringify({ peerId: this.peer.peerId }));
@@ -108,7 +101,7 @@ export class Client{
       }
       // Right now we have two arrays to keep track of peers for.
       // this is just for resolving names but we can skip alll that by encrypting their name
-      // for their peerId, and decrypting it.
+      // for their peerId, and decrypting it. (Didn't get to this)
       for(const u of this.users){
         if(u.getId() === peerId){
           removedPeerName = u.displayName;
@@ -125,17 +118,13 @@ export class Client{
   
     public async sendDirectMessage(message: any, recipient: any){
       console.log("Sending direct message...");
-      
-      // const recipientId = recipient.peer.peerId;
-      // const port = recipient.peer.port;
-      // const address = recipient.peer.address;
-      // console.log("Sending direct message to peer: " + recipientId.substring(0, 4))
       const msg = {
         "operation":"directMessage",
         "address":this.peer.address,
         "port":this.peer.port,
         "peerId":this.peer.peerId,
-        "message":message
+        "message":message,
+        "targetId":message.peerId
       }
       const packet = await packetQuery(msg)
       console.log("Sending now");
@@ -146,6 +135,5 @@ export class Client{
     public sendMessage(message: any){
       const buf = Buffer.from(JSON.stringify({ message: message, peer: this.peer.peerId, author: this.displayName }));
       this.subcluster.emit("message", buf);
-  
     }
   }
