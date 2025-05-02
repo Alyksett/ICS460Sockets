@@ -8,37 +8,21 @@ import { randomBytes } from 'socket:crypto';
 
 
 export async function packetQuery(query: any){
-  // I copied all this from the source code and it works
-  // They don't really make it clear what usr1/2/3 are but... it works?
+  // copied from the source code and it works
+  // They don't really make it clear what usr1/2/3 are, likely dummy previous packet IDs
   const packet = new PacketQuery({
     message: query,
     usr1: Buffer.from(String(Date.now())),
     usr3: Buffer.from(randomBytes(32)),
     usr4: Buffer.from(String(1))
   })
-  // also don't know why we're encoding and decoding
+  // Also very unclear why we're encoding and decoding
   const data = await Packet.encode(packet)
   const p = Packet.decode(data)
 
   return p
 }
 
-export async function packetQueryTest(query: any, peer: any){
-  // I copied all this from the source code and it works
-  // They don't really make it clear what usr1/2/3 are but... it works?
-  const packet = new PacketQuery({
-    message: {requesterPeerId: "-1", message:"test"},
-    usr1: Buffer.from(String(Date.now())),
-    usr3: Buffer.from(randomBytes(32)),
-    usr4: Buffer.from(String(1)),
-    clusterId:Buffer.from(peer.clusterId)
-  })
-  // also don't know why we're encoding and decoding
-  const data = await Packet.encode(packet)
-  const p = Packet.decode(data)
-
-  return p
-}
 
 export function pid(peerId: string){
   return peerId.substring(0, 8);
@@ -128,7 +112,7 @@ async function _handleJoin(client: Client, subcluster: any, newPeer: any){
 
   // We want to get this new peer's name, so we construct a PacketQuery to send into the network of peers
   // Again, should probably just send a msg to the actual peer themselves via client.peer.send(msg, newPeerPort, newPeerAddress)
-  // but I spent like 6 hours trying that and couldn't get it to work :shrug: lol
+  // but I spent like 6 hours trying that and couldn't get it to work :shrug:
   const message = {"operation":"getName", "address":client.peer.address, "port":client.peer.port, "id":client.peer.peerId}
   
   // use util funtion to construct a socketsupply PacketQuery
