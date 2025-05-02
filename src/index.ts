@@ -26,13 +26,12 @@ document.getElementById('loginForm')?.addEventListener('submit', async (event) =
    
   const messageInput = document.getElementById("messageInput") as HTMLInputElement;
   messageInput.addEventListener("keyup", (event) => handleEnterKey(event, client));
-(window as any).refreshListOfPeersOnline = () => refreshListOfPeersOnline(client);
+  (window as any).refreshListOfPeersOnline = () => refreshListOfPeersOnline(client);
   (window as any).toggleDirectMessageSelect = () => toggleDirectMessageSelect(client);
   (window as any).handleLogout = () => handleLogout(client);
-  // (window as any).utilityButton = () => utilityButton(client);
   console.log("Client initialized");
  
-   (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client.peer.peerId).substring(0, 8)}`;
+  (document.getElementById('nameLabel') as HTMLElement).innerHTML = `Logged in as ${displayName}: ${(client.peer.peerId).substring(0, 8)}`;
   (document.getElementById('loginPage') as HTMLElement).style.display = 'none';
   (document.getElementById('chatBox') as HTMLElement).style.display = 'flex';
   setInterval(() => {refreshListOfPeersOnline(client)}, 9999);  
